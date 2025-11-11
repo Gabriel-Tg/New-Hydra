@@ -1,0 +1,35 @@
+:root{ --bg:#f7f7f8; --text:#11181c; --card:#ffffff; --border:#e6e6e8; --muted:#6b7280; --primary:#111; }
+*{ box-sizing:border-box; }
+html,body,#root{ height:100%; }
+body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+.container{ max-width:1080px; margin:0 auto; padding:16px; }
+.card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; }
+.btn{ border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:12px; cursor:pointer; }
+.btn.primary{ background:var(--primary); color:#fff; border-color:var(--primary); }
+.badge{ font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:#f3f4f6; color:#111; }
+.row{ display:flex; gap:12px; flex-wrap:wrap; }
+.grid-2{ display:grid; gap:12px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.grid-3{ display:grid; gap:12px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.table{ width:100%; border-collapse:collapse; }
+.table th,.table td{ border-top:1px solid var(--border); padding:8px; text-align:left; }
+.table thead th{ background:#f8f8f8; color:#666; border-top:none; }
+.topbar{ position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border); }
+.topbar-inner{ display:flex; align-items:center; justify-content:space-between; height:56px; max-width:1080px; margin:0 auto; padding:0 16px; }
+.tabs{ display:flex; gap:8px; }
+.tabs .tab{ padding:8px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; }
+.tabs .tab.active{ background:#111; color:#fff; border-color:#111; }
+.switch{ display:inline-flex; border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.switch button{ padding:8px 12px; background:#fff; border:none; cursor:pointer; }
+.switch button.active{ background:#111; color:#fff; }
+.kpi{ background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px; }
+.kpi .label{ color:#666; font-size:12px; }
+.kpi .value{ font-weight:700; font-size:22px; margin-top:4px; }
+.kpi .sub{ color:#9ca3af; font-size:12px; margin-top:2px; }
+.muted{ color:var(--muted); }
+
+/* status helpers */
+.badge.confirmed{ background:#eaffea; color:#166534; border-color:#c9e8c9; }
+.badge.pending{ background:#fff7df; color:#92400e; border-color:#f4e2b4; }
+.badge.canceled{ background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; text-decoration:line-through; }
+.badge.done{ background:#e6fffa; color:#065f46; border-color:#b3f0e5; }
+.badge.overdue{ background:#ffe5e5; color:#7f1d1d; border-color:#f5bcbc; }
