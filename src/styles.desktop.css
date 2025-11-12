@@ -16,3 +16,55 @@
   .card:hover{ transform:translateY(-2px); box-shadow:0 12px 36px rgba(16,24,40,.1); }
   .btn:hover{ transform:translateY(-2px); box-shadow:0 10px 26px rgba(16,24,40,.08); }
 }
+/* Container do cabeçalho */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Logo da empresa no lugar da sigla CHRIS */
+.brand-logo {
+  height: 100px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  user-select: none;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* Títulos */
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.header-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Responsivo (reduz o logo no mobile) */
+@media (max-width: 600px) {
+  .brand-logo {
+    height: 34px;
+  }
+  .header-title {
+    font-size: 16px;
+  }
+  .header-sub {
+    font-size: 12px;
+  }
+}
