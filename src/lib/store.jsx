@@ -1,46 +1,106 @@
 import { create } from "zustand";
-import { addDays } from "./date.jsx";
 
-const today = new Date();
+const LS_KEY = "nh_store_v1";
 
-const MOCK_CLIENTS = [
-  { id: "c1", name: "Ana Souza", phone: "(11) 90000-0001", address: "Av. Central, 100" },
-  { id: "c2", name: "Bruno Lima", phone: "(11) 90000-0002", address: "Rua das Flores, 200" },
-  { id: "c3", name: "Carla Nunes", phone: "(11) 90000-0003", address: "Alameda Azul, 300" },
-];
+const uid = (p="id") => `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;
 
-const MOCK_SERVICES = [
-  { id: "s1", name: "Instalação", duration: 90, price: 250 },
-  { id: "s2", name: "Manutenção", duration: 60, price: 180 },
-  { id: "s3", name: "Visita Técnica", duration: 45, price: 120 },
-];
+const load = () => {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; }
+};
+const save = (state) => {
+  const { clients, appts, receivables, payables } = state;
+  localStorage.setItem(LS_KEY, JSON.stringify({ clients, appts, receivables, payables }));
+};
 
-const MOCK_APPTS = [
-  { id: "a1", client_id: "c1", service_id: "s1", start_at: addDays(today,0).setHours(9,0,0,0),   end_at: addDays(today,0).setHours(10,30,0,0), status: "confirmed", location: "Av. Central, 100", notes: "Levar furadeira" },
-  { id: "a2", client_id: "c2", service_id: "s2", start_at: addDays(today,0).setHours(13,30,0,0), end_at: addDays(today,0).setHours(14,30,0,0), status: "pending",   location: "Rua das Flores, 200", notes: "Pedir autorização" },
-  { id: "a3", client_id: "c3", service_id: "s3", start_at: addDays(today,1).setHours(10,0,0,0),  end_at: addDays(today,1).setHours(10,45,0,0), status: "confirmed", location: "Alameda Azul, 300", notes: "Estacionamento difícil" },
-  { id: "a4", client_id: "c1", service_id: "s2", start_at: addDays(today,3).setHours(15,0,0,0),  end_at: addDays(today,3).setHours(16,0,0,0), status: "confirmed", location: "Av. Central, 100", notes: "Trocar filtro" },
-];
+const initial = (() => {
+  const persisted = load();
+  return {
+    clients: persisted.clients || [
+      { id:"c1", name:"Ana Souza", phone:"", address:"" },
+      { id:"c2", name:"Bruno Lima", phone:"", address:"" },
+    ],
+    appts: persisted.appts || [],
+    receivables: persisted.receivables || [],
+    payables: persisted.payables || [],
+  };
+})();
 
-const MOCK_RECEIVABLES = [
-  { id: "r1", customer: "Ana Souza",   due_date: addDays(today,0),  amount: 250, status: "open",    method: "pix" },
-  { id: "r2", customer: "Bruno Lima",  due_date: addDays(today,2),  amount: 180, status: "open",    method: "card" },
-  { id: "r3", customer: "Carla Nunes", due_date: addDays(today,-2), amount: 120, status: "overdue", method: "cash" },
-];
+export const useStore = create((set, get) => ({
+  ...initial,
 
-const MOCK_PAYABLES = [
-  { id: "p1", description: "Aluguel",    due_date: addDays(today,4), amount: 800, status: "open", category: "Fixo" },
-  { id: "p2", description: "Internet",   due_date: addDays(today,1), amount: 120, status: "open", category: "Fixo" },
-  { id: "p3", description: "Combustível",due_date: addDays(today,0), amount: 150, status: "open", category: "Variável" },
-];
+  /** CLIENTES */
+  addClientIfMissing: (name) => {
+    const s = get();
+    if (!name?.trim()) return null;
+    const found = s.clients.find(c => c.name.toLowerCase() === name.trim().toLowerCase());
+    if (found) return found.id;
+    const id = uid("c");
+    const next = [...s.clients, { id, name: name.trim(), phone:"", address:"" }];
+    set({ clients: next });
+    save({ ...get(), clients: next });
+    return id;
+  },
 
-export const useStore = create((set) => ({
-  appts: MOCK_APPTS,
-  receivables: MOCK_RECEIVABLES,
-  payables: MOCK_PAYABLES,
-  clients: MOCK_CLIENTS,
-  services: MOCK_SERVICES,
-  markApptDone: (id) => set((s) => ({ appts: s.appts.map(a => a.id===id ? { ...a, status: "done" } : a) })),
-  markRecPaid: (id) => set((s) => ({ receivables: s.receivables.map(r => r.id===id ? { ...r, status: "paid" } : r) })),
-  markPayPaid: (id) => set((s) => ({ payables: s.payables.map(p => p.id===id ? { ...p, status: "paid" } : p) })),
+  /** AGENDAMENTOS */
+  addAppointment: (data) => {
+    const s = get();
+    const client_id = data.client_id || get().addClientIfMissing(data.client_name);
+    const appt = {
+      id: uid("a"),
+      client_id,
+      service: data.service || "",
+      start_at: new Date(`${data.date}T${data.start}:00`).getTime(),
+      end_at: new Date(`${data.date}T${data.end}:00`).getTime(),
+      status: "confirmed",
+      location: data.location || "",
+      notes: data.notes || ""
+    };
+    const next = [...s.appts, appt];
+    set({ appts: next });
+    save({ ...get(), appts: next });
+  },
+
+  /** RECEBÍVEIS */
+  addReceivable: (data) => {
+    const s = get();
+    const client_id = get().addClientIfMissing(data.customer);
+    const rec = {
+      id: uid("r"),
+      customer: data.customer,
+      client_id,
+      due_date: new Date(`${data.due_date}T00:00:00`).getTime(),
+      amount: Number(data.amount || 0),
+      status: "open",
+      method: data.method || "pix",
+    };
+    const next = [...s.receivables, rec];
+    set({ receivables: next });
+    save({ ...get(), receivables: next });
+  },
+  markRecPaid: (id) => {
+    const next = get().receivables.map(r => r.id===id ? { ...r, status:"paid" } : r);
+    set({ receivables: next });
+    save({ ...get(), receivables: next });
+  },
+
+  /** PAGÁVEIS */
+  addPayable: (data) => {
+    const s = get();
+    const pay = {
+      id: uid("p"),
+      description: data.description,
+      due_date: new Date(`${data.due_date}T00:00:00`).getTime(),
+      amount: Number(data.amount || 0),
+      status: "open",
+      category: data.category || "Geral",
+    };
+    const next = [...s.payables, pay];
+    set({ payables: next });
+    save({ ...get(), payables: next });
+  },
+  markPayPaid: (id) => {
+    const next = get().payables.map(p => p.id===id ? { ...p, status:"paid" } : p);
+    set({ payables: next });
+    save({ ...get(), payables: next });
+  },
 }));

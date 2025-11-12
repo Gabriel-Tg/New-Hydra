@@ -1,27 +1,37 @@
-export const pad = (n) => n.toString().padStart(2, "0");
-export const fmtDate = (d) => {
-  const dt = new Date(d);
-  return `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${dt.getFullYear()}`;
-};
-export const fmtTime = (d) => {
-  const dt = new Date(d);
-  return `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-};
-export const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
-export const endOfDay = (d) => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
-export const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-export const startOfWeek = (d) => { const x = new Date(d); const day = (x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; };
-export const endOfWeek = (d) => addDays(startOfWeek(d), 6);
-export const isSameDay = (a,b) => {
-  const da=new Date(a), db=new Date(b);
-  return da.getFullYear()===db.getFullYear() && da.getMonth()===db.getMonth() && da.getDate()===db.getDate();
-};
-export const isSameMonth = (a,b) => {
-  const da=new Date(a), db=new Date(b);
-  return da.getFullYear()===db.getFullYear() && da.getMonth()===db.getMonth();
-};
-export const rangeDays = (a,b) => {
-  const res=[]; let cur=startOfDay(a); const end=endOfDay(b);
-  while(cur<=end){ res.push(new Date(cur)); cur=addDays(cur,1); }
-  return res;
-};
+import React, { useState } from "react";
+import Hoje from "./pages/Hoje.jsx";
+import Agenda from "./pages/Agenda.jsx";
+import Financeiro from "./pages/Financeiro.jsx";
+import Clientes from "./pages/Clientes.jsx";
+import Config from "./pages/Config.jsx";
+import Header from "./components/Header.jsx";
+import MobileTabBar from "./components/MobileTabBar.jsx";
+import "./styles.css";
+
+export default function App() {
+  const [tab, setTab] = useState("hoje");
+
+  return (
+    <div className="app">
+      {/* Topo compacto com identidade visual */}
+      <Header />
+
+      {/* Conteúdo principal (já com padding para não colidir com a tab bar fixa) */}
+      <main className="main">
+        {tab === "hoje" && <Hoje />}
+        {tab === "agenda" && <Agenda />}
+        {tab === "financeiro" && <Financeiro />}
+        {tab === "clientes" && <Clientes />}
+        {tab === "config" && <Config />}
+      </main>
+
+      {/* Navegação inferior mobile-first */}
+      <MobileTabBar tab={tab} setTab={setTab} />
+
+      {/* Ação principal (flutuante) */}
+      <div style={{ position: "fixed", right: 16, bottom: 88, zIndex: 50 }}>
+        <button className="btn primary">+ Novo</button>
+      </div>
+    </div>
+  );
+}
