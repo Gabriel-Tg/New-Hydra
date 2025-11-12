@@ -5,37 +5,33 @@ import { useStore } from "../lib/store.jsx";
 import { addMinutes } from "../lib/date.jsx";
 
 export default function NewMenu(){
-  const [open, setOpen] = useState(false);
   const [type, setType] = useState(null);
+  const closeAll = () => setType(null);
 
   return (
     <>
-      {/* Botão flutuante */}
+      {/* FAB */}
       <div style={{ position:"fixed", right:16, bottom:88, zIndex:50 }}>
-        <button className="btn primary" onClick={()=>setOpen(o=>!o)}>+ Novo</button>
+        <button className="btn primary" onClick={()=>setType("menu")}>+ Novo</button>
       </div>
 
-      {/* Action sheet */}
-      {open && !type && (
-        <div className="card" style={{
-          position:"fixed", right:16, bottom:146, zIndex:60, width:240
-        }}>
-          <div className="stack">
-            <button className="btn" onClick={()=>setType("appt")}>Agendar com cliente</button>
-            <button className="btn" onClick={()=>setType("rec")}>Adicionar a receber</button>
-            <button className="btn" onClick={()=>setType("pay")}>Adicionar a pagar</button>
-          </div>
+      {/* Modal central com 3 opções */}
+      <Modal open={type==="menu"} onClose={closeAll} title="Criar novo">
+        <div style={{display:"grid", gap:10}}>
+          <button className="btn" onClick={()=>setType("appt")}>Agendar com cliente</button>
+          <button className="btn" onClick={()=>setType("rec")}>Adicionar a receber</button>
+          <button className="btn" onClick={()=>setType("pay")}>Adicionar a pagar</button>
         </div>
-      )}
+      </Modal>
 
-      <NewAppointment open={type==="appt"} onClose={()=>{setType(null); setOpen(false);}} />
-      <NewReceivable open={type==="rec"} onClose={()=>{setType(null); setOpen(false);}} />
-      <NewPayable open={type==="pay"} onClose={()=>{setType(null); setOpen(false);}} />
+      <NewAppointment open={type==="appt"} onClose={closeAll} />
+      <NewReceivable open={type==="rec"} onClose={closeAll} />
+      <NewPayable open={type==="pay"} onClose={closeAll} />
     </>
   );
 }
 
-/* ---------- Modais ---------- */
+/* ---------- Forms ---------- */
 
 function NewAppointment({ open, onClose }){
   const add = useStore(s=>s.addAppointment);
@@ -66,13 +62,13 @@ function NewAppointment({ open, onClose }){
       <form className="stack" onSubmit={submit}>
         <ClientAutocomplete value={clientName} onChange={setClientName} />
         <div className="row">
-          <input className="input" type="date" value={date} onChange={e=>setDate(e.target.value)} style={inputStyle}/>
-          <input className="input" type="time" value={start} onChange={e=>setStart(e.target.value)} style={inputStyle}/>
-          <input className="input" type="number" min="15" step="15" value={duration} onChange={e=>setDuration(e.target.value)} style={inputStyle} placeholder="Duração (min)" />
+          <input className="input" type="date" value={date} onChange={e=>setDate(e.target.value)} style={input}/>
+          <input className="input" type="time" value={start} onChange={e=>setStart(e.target.value)} style={input}/>
+          <input className="input" type="number" min="15" step="15" value={duration} onChange={e=>setDuration(e.target.value)} style={input} placeholder="Duração (min)" />
         </div>
-        <input className="input" value={service} onChange={e=>setService(e.target.value)} placeholder="Serviço" style={inputStyle}/>
-        <input className="input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Local (opcional)" style={inputStyle}/>
-        <textarea className="input" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas" style={{...inputStyle, minHeight:80}} />
+        <input className="input" value={service} onChange={e=>setService(e.target.value)} placeholder="Serviço" style={input}/>
+        <input className="input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Local (opcional)" style={input}/>
+        <textarea className="input" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas" style={{...input, minHeight:80}} />
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
           <button type="submit" className="btn primary">Salvar</button>
@@ -100,10 +96,10 @@ function NewReceivable({ open, onClose }){
       <form className="stack" onSubmit={submit}>
         <ClientAutocomplete value={customer} onChange={setCustomer} placeholder="Cliente" />
         <div className="row">
-          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} style={inputStyle}/>
-          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} style={inputStyle}/>
+          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} style={input}/>
+          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} style={input}/>
         </div>
-        <select className="input" value={method} onChange={e=>setMethod(e.target.value)} style={inputStyle}>
+        <select className="input" value={method} onChange={e=>setMethod(e.target.value)} style={input}>
           <option value="pix">Pix</option>
           <option value="card">Cartão</option>
           <option value="cash">Dinheiro</option>
@@ -134,12 +130,12 @@ function NewPayable({ open, onClose }){
   return (
     <Modal open={open} onClose={onClose} title="Novo a pagar">
       <form className="stack" onSubmit={submit}>
-        <input className="input" placeholder="Descrição" value={description} onChange={e=>setDescription(e.target.value)} style={inputStyle}/>
+        <input className="input" placeholder="Descrição" value={description} onChange={e=>setDescription(e.target.value)} style={input}/>
         <div className="row">
-          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} style={inputStyle}/>
-          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} style={inputStyle}/>
+          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} style={input}/>
+          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} style={input}/>
         </div>
-        <input className="input" placeholder="Categoria" value={category} onChange={e=>setCategory(e.target.value)} style={inputStyle}/>
+        <input className="input" placeholder="Categoria" value={category} onChange={e=>setCategory(e.target.value)} style={input}/>
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
           <button type="submit" className="btn primary">Salvar</button>
@@ -149,4 +145,4 @@ function NewPayable({ open, onClose }){
   );
 }
 
-const inputStyle = { width:"100%", padding:"10px 12px", border:"1px solid var(--border)", borderRadius:12 };
+const input = { width:"100%", padding:"10px 12px", border:"1px solid var(--border)", borderRadius:12 };

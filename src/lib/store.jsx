@@ -1,48 +1,53 @@
 import { create } from "zustand";
 
-const LS_KEY = "nh_store_v1";
-
+const LS_KEY = "nh_store_v2";
 const uid = (p="id") => `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;
 
 const load = () => {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; }
 };
-const save = (state) => {
-  const { clients, appts, receivables, payables } = state;
-  localStorage.setItem(LS_KEY, JSON.stringify({ clients, appts, receivables, payables }));
-};
+const persist = (next) => localStorage.setItem(LS_KEY, JSON.stringify(next));
 
 const initial = (() => {
-  const persisted = load();
+  const p = load();
   return {
-    clients: persisted.clients || [
-      { id:"c1", name:"Ana Souza", phone:"", address:"" },
-      { id:"c2", name:"Bruno Lima", phone:"", address:"" },
-    ],
-    appts: persisted.appts || [],
-    receivables: persisted.receivables || [],
-    payables: persisted.payables || [],
+    clients: p.clients || [],
+    appts: p.appts || [],
+    receivables: p.receivables || [],
+    payables: p.payables || [],
+    cashOpening: p.cashOpening || {}, // { '2025-11': 1000 }
   };
 })();
 
 export const useStore = create((set, get) => ({
   ...initial,
 
-  /** CLIENTES */
-  addClientIfMissing: (name) => {
-    const s = get();
+  // ---------- helpers ----------
+  _save(partial) {
+    const next = { ...get(), ...partial };
+    persist({
+      clients: next.clients,
+      appts: next.appts,
+      receivables: next.receivables,
+      payables: next.payables,
+      cashOpening: next.cashOpening,
+    });
+    set(partial);
+  },
+
+  // ---------- Clients ----------
+  addClientIfMissing(name) {
     if (!name?.trim()) return null;
+    const s = get();
     const found = s.clients.find(c => c.name.toLowerCase() === name.trim().toLowerCase());
     if (found) return found.id;
     const id = uid("c");
-    const next = [...s.clients, { id, name: name.trim(), phone:"", address:"" }];
-    set({ clients: next });
-    save({ ...get(), clients: next });
+    this._save({ clients: [...s.clients, { id, name: name.trim(), phone:"", address:"" }] });
     return id;
   },
 
-  /** AGENDAMENTOS */
-  addAppointment: (data) => {
+  // ---------- Appointments ----------
+  addAppointment(data) {
     const s = get();
     const client_id = data.client_id || get().addClientIfMissing(data.client_name);
     const appt = {
@@ -51,17 +56,30 @@ export const useStore = create((set, get) => ({
       service: data.service || "",
       start_at: new Date(`${data.date}T${data.start}:00`).getTime(),
       end_at: new Date(`${data.date}T${data.end}:00`).getTime(),
-      status: "confirmed",
+      status: "pending", // padrão: pendente
       location: data.location || "",
       notes: data.notes || ""
     };
-    const next = [...s.appts, appt];
-    set({ appts: next });
-    save({ ...get(), appts: next });
+    this._save({ appts: [...s.appts, appt] });
+  },
+  confirmAppointment(id) {
+    const appts = get().appts.map(a => a.id===id ? { ...a, status:"confirmed" } : a);
+    get()._save({ appts });
+  },
+  rescheduleAppointment(id, { date, start, end }) {
+    const start_at = new Date(`${date}T${start}:00`).getTime();
+    const end_at = new Date(`${date}T${end}:00`).getTime();
+    const appts = get().appts.map(a => a.id===id ? { ...a, start_at, end_at, status:"confirmed" } : a);
+    get()._save({ appts });
+  },
+  completeAppointment(id) {
+    // concluiu = removemos da agenda (poderia marcar 'done'; aqui removemos como você pediu)
+    const appts = get().appts.filter(a => a.id!==id);
+    get()._save({ appts });
   },
 
-  /** RECEBÍVEIS */
-  addReceivable: (data) => {
+  // ---------- Receivables ----------
+  addReceivable(data) {
     const s = get();
     const client_id = get().addClientIfMissing(data.customer);
     const rec = {
@@ -73,18 +91,15 @@ export const useStore = create((set, get) => ({
       status: "open",
       method: data.method || "pix",
     };
-    const next = [...s.receivables, rec];
-    set({ receivables: next });
-    save({ ...get(), receivables: next });
+    this._save({ receivables: [...s.receivables, rec] });
   },
-  markRecPaid: (id) => {
-    const next = get().receivables.map(r => r.id===id ? { ...r, status:"paid" } : r);
-    set({ receivables: next });
-    save({ ...get(), receivables: next });
+  markRecPaid(id) {
+    const receivables = get().receivables.map(r => r.id===id ? { ...r, status:"paid" } : r);
+    get()._save({ receivables });
   },
 
-  /** PAGÁVEIS */
-  addPayable: (data) => {
+  // ---------- Payables ----------
+  addPayable(data) {
     const s = get();
     const pay = {
       id: uid("p"),
@@ -94,13 +109,16 @@ export const useStore = create((set, get) => ({
       status: "open",
       category: data.category || "Geral",
     };
-    const next = [...s.payables, pay];
-    set({ payables: next });
-    save({ ...get(), payables: next });
+    this._save({ payables: [...s.payables, pay] });
   },
-  markPayPaid: (id) => {
-    const next = get().payables.map(p => p.id===id ? { ...p, status:"paid" } : p);
-    set({ payables: next });
-    save({ ...get(), payables: next });
+  markPayPaid(id) {
+    const payables = get().payables.map(p => p.id===id ? { ...p, status:"paid" } : p);
+    get()._save({ payables });
   },
+
+  // ---------- Cash flow ----------
+  setCashOpening(ym, value) {
+    const cashOpening = { ...get().cashOpening, [ym]: Number(value||0) };
+    get()._save({ cashOpening });
+  }
 }));

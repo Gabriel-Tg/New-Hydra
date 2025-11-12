@@ -6,7 +6,6 @@ export default function MobileTabBar({ tab, setTab }) {
     ["agenda","Agenda"],
     ["financeiro","Finanças"],
     ["clientes","Clientes"],
-    ["config","Config"],
   ];
   return (
     <nav className="tabbar">
