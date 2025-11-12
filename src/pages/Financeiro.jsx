@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useStore } from "../lib/store.jsx";
 import Modal from "../components/Modal.jsx";
+import Portal from "../components/Portal.jsx";
 import { formatBRL, parseBRL } from "../lib/money.js";
 
 /* helpers de período */
@@ -25,8 +26,35 @@ export default function Financeiro(){
   const [from, setFrom] = useState(()=> toISO(startOfMonth(new Date())));
   const [to, setTo] = useState(()=> toISO(new Date()));
   const [showPicker, setShowPicker] = useState(false);
+
+  // PRESETS com Portal + posição fixa
   const [showPresets, setShowPresets] = useState(false);
-  const [tab, setTab] = useState("rec"); // rec | pay | fluxo
+  const triggerRef = useRef(null);
+  const [panelPos, setPanelPos] = useState({ top: 80, left: 16, width: 240 });
+
+  const openPresets = () => {
+    const el = triggerRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const width = 240;
+      const left = Math.min(r.left, vw - width - 12);
+      setPanelPos({ top: r.bottom + 8, left, width });
+    }
+    setShowPresets(true);
+  };
+
+  useEffect(() => {
+    if (!showPresets) return;
+    const sync = () => openPresets();
+    window.addEventListener("resize", sync);
+    window.addEventListener("scroll", sync, true);
+    return () => {
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("scroll", sync, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPresets]);
 
   const applyPreset = (k) => {
     const now = new Date();
@@ -56,7 +84,7 @@ export default function Financeiro(){
   const saidasPagas = sum(pInRange, x=>x.status==="paid");
   const saldoReal = opening + entradasPagas - saidasPagas;
 
-  // Saldo inicial via MODAL (evita quebra de linha)
+  // Saldo inicial em modal
   const [openOpening, setOpenOpening] = useState(false);
   const [openingInput, setOpeningInput] = useState(() => String(opening));
 
@@ -71,12 +99,17 @@ export default function Financeiro(){
           </div>
 
           <div className="pill-group">
-            <div className="popover">
-              <button className="pill ripple" onClick={()=>setShowPresets(v=>!v)}>
-                <span className="hint">Período</span><strong>Pré-definidos</strong>
-              </button>
-              {showPresets && (
-                <div className="popover-panel">
+            <button ref={triggerRef} className="pill ripple" onClick={openPresets}>
+              <span className="hint">Período</span><strong>Pré-definidos</strong>
+            </button>
+
+            {showPresets && (
+              <Portal>
+                <div className="popover-backdrop" onClick={()=>setShowPresets(false)} />
+                <div
+                  className="popover-fixed"
+                  style={{ top: panelPos.top, left: panelPos.left, width: panelPos.width }}
+                >
                   <div className="stack">
                     <button className="btn" onClick={()=>applyPreset("today")}>Hoje</button>
                     <button className="btn" onClick={()=>applyPreset("week")}>Esta semana</button>
@@ -85,8 +118,8 @@ export default function Financeiro(){
                     <button className="btn" onClick={()=>{ setShowPresets(false); setShowPicker(true); }}>Personalizado…</button>
                   </div>
                 </div>
-              )}
-            </div>
+              </Portal>
+            )}
 
             <div className="pill">
               <span className="hint">De</span><strong>{from.split("-").reverse().join("/")}</strong>
@@ -101,78 +134,31 @@ export default function Financeiro(){
 
       {/* TABS */}
       <div className="row">
-        <button className={`btn ripple ${tab==="rec"?"primary":""}`} onClick={()=>setTab("rec")}>A Receber</button>
-        <button className={`btn ripple ${tab==="pay"?"primary":""}`} onClick={()=>setTab("pay")}>A Pagar</button>
-        <button className={`btn ripple ${tab==="fluxo"?"primary":""}`} onClick={()=>setTab("fluxo")}>Fluxo de Caixa</button>
+        <button className="btn ripple" onClick={()=>window.dispatchEvent(new CustomEvent('app:setTab', {detail:'financeiro:rec'}))}>A Receber</button>
+        <button className="btn ripple" onClick={()=>window.dispatchEvent(new CustomEvent('app:setTab', {detail:'financeiro:pay'}))}>A Pagar</button>
+        <button className="btn ripple" onClick={()=>window.dispatchEvent(new CustomEvent('app:setTab', {detail:'financeiro:fluxo'}))}>Fluxo de Caixa</button>
       </div>
 
-      {/* RECEBÍVEIS */}
-      {tab==="rec" && (
-        <div className="card slide-up">
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
-            <strong>Resumo</strong>
-            <div className="muted">Total: {formatBRL(sum(rInRange))} • Pagos: {formatBRL(entradasPagas)}</div>
-          </div>
-          <div className="table-card">
-            {rInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
-            {rInRange.map((r)=>(
-              <div key={r.id} className="table-row fade-in">
-                <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
-                <div style={{flex:1}}>{r.customer}</div>
-                <div className="muted" style={{minWidth:90}}>{r.method}</div>
-                <div style={{minWidth:130}}><strong>{formatBRL(r.amount)}</strong></div>
-                <button className="btn ripple" onClick={()=>markRecPaid(r.id)} disabled={r.status==="paid"}>
-                  {r.status==="paid" ? "Pago" : "Marcar pago"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* PAGÁVEIS */}
-      {tab==="pay" && (
-        <div className="card slide-up">
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
-            <strong>Resumo</strong>
-            <div className="muted">Total: {formatBRL(sum(pInRange))} • Pagos: {formatBRL(saidasPagas)}</div>
-          </div>
-          <div className="table-card">
-            {pInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
-            {pInRange.map((p)=>(
-              <div key={p.id} className="table-row fade-in">
-                <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
-                <div style={{flex:1}}>{p.description}</div>
-                <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
-                <div style={{minWidth:130}}><strong>{formatBRL(p.amount)}</strong></div>
-                <button className="btn ripple" onClick={()=>markPayPaid(p.id)} disabled={p.status==="paid"}>
-                  {p.status==="paid" ? "Pago" : "Pagar"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* FLUXO DE CAIXA */}
-      {tab==="fluxo" && (
-        <div className="card slide-up">
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:8}}>
-            <strong>Fluxo de Caixa</strong>
-            <button className="pill ripple" onClick={()=>{ setOpeningInput(String(opening)); setOpenOpening(true); }}>
-              <span className="hint">Saldo inicial {monthKey}</span>
-              <strong>{formatBRL(opening)}</strong>
-            </button>
-          </div>
-
-          <div className="row">
-            <div className="kpi fade-in"><div className="label">Entradas (previsto)</div><div className="value">{formatBRL(entradasPrev)}</div></div>
-            <div className="kpi fade-in"><div className="label">Saídas (previsto)</div><div className="value">{formatBRL(saidasPrev)}</div></div>
-            <div className="kpi fade-in"><div className="label">Saldo previsto</div><div className="value">{formatBRL(saldoPrevisto)}</div></div>
-            <div className="kpi fade-in"><div className="label">Saldo real</div><div className="value">{formatBRL(saldoReal)}</div></div>
-          </div>
-        </div>
-      )}
+      {/* Listas */}
+      <SectionReceber
+        rInRange={rInRange}
+        entradasPagas={entradasPagas}
+        markRecPaid={markRecPaid}
+      />
+      <SectionPagar
+        pInRange={pInRange}
+        saidasPagas={saidasPagas}
+        markPayPaid={markPayPaid}
+      />
+      <SectionFluxo
+        monthKey={monthKey}
+        opening={opening}
+        entradasPrev={entradasPrev}
+        saidasPrev={saidasPrev}
+        saldoPrevisto={saldoPrevisto}
+        saldoReal={saldoReal}
+        openOpening={()=>{ setOpeningInput(String(opening)); setOpenOpening(true); }}
+      />
 
       {/* Modal - período personalizado */}
       <Modal open={showPicker} onClose={()=>setShowPicker(false)} title="Período personalizado">
@@ -191,7 +177,7 @@ export default function Financeiro(){
         </div>
       </Modal>
 
-      {/* Modal - Saldo inicial (sem quebra de linhas) */}
+      {/* Modal - Saldo inicial */}
       <Modal open={openOpening} onClose={()=>setOpenOpening(false)} title={`Saldo inicial — ${monthKey}`}>
         <div className="stack">
           <div className="muted">Informe o saldo de abertura do mês selecionado.</div>
@@ -210,7 +196,7 @@ export default function Financeiro(){
                 className="btn primary ripple"
                 onClick={()=>{
                   const val = parseBRL(openingInput);
-                  setOpening(monthKey, val);
+                  useStore.getState().setCashOpening(monthKey, val);
                   setOpenOpening(false);
                 }}
               >Salvar</button>
@@ -218,6 +204,80 @@ export default function Financeiro(){
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+/* Sub-seções (separei para deixar mais limpo) */
+function SectionReceber({ rInRange, entradasPagas, markRecPaid }){
+  const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount||0),0);
+  return (
+    <div className="card slide-up">
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+        <strong>A Receber</strong>
+        <div className="muted">Total: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum(rInRange))} • Pagos: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(entradasPagas)}</div>
+      </div>
+      <div className="table-card">
+        {rInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
+        {rInRange.map((r)=>(
+          <div key={r.id} className="table-row fade-in">
+            <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
+            <div style={{flex:1}}>{r.customer}</div>
+            <div className="muted" style={{minWidth:90}}>{r.method}</div>
+            <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(r.amount)}</strong></div>
+            <button className="btn ripple" onClick={()=>markRecPaid(r.id)} disabled={r.status==="paid"}>
+              {r.status==="paid" ? "Pago" : "Marcar pago"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SectionPagar({ pInRange, saidasPagas, markPayPaid }){
+  const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount||0),0);
+  return (
+    <div className="card slide-up">
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+        <strong>A Pagar</strong>
+        <div className="muted">Total: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum(pInRange))} • Pagos: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(saidasPagas)}</div>
+      </div>
+      <div className="table-card">
+        {pInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
+        {pInRange.map((p)=>(
+          <div key={p.id} className="table-row fade-in">
+            <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
+            <div style={{flex:1}}>{p.description}</div>
+            <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
+            <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.amount)}</strong></div>
+            <button className="btn ripple" onClick={()=>markPayPaid(p.id)} disabled={p.status==="paid"}>
+              {p.status==="paid" ? "Pago" : "Pagar"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SectionFluxo({ monthKey, opening, entradasPrev, saidasPrev, saldoPrevisto, saldoReal, openOpening }){
+  const fmt = (v)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+  return (
+    <div className="card slide-up">
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:8}}>
+        <strong>Fluxo de Caixa</strong>
+        <button className="pill ripple" onClick={openOpening}>
+          <span className="hint">Saldo inicial {monthKey}</span>
+          <strong>{fmt(opening)}</strong>
+        </button>
+      </div>
+      <div className="row">
+        <div className="kpi fade-in"><div className="label">Entradas (previsto)</div><div className="value">{fmt(entradasPrev)}</div></div>
+        <div className="kpi fade-in"><div className="label">Saídas (previsto)</div><div className="value">{fmt(saidasPrev)}</div></div>
+        <div className="kpi fade-in"><div className="label">Saldo previsto</div><div className="value">{fmt(saldoPrevisto)}</div></div>
+        <div className="kpi fade-in"><div className="label">Saldo real</div><div className="value">{fmt(saldoReal)}</div></div>
+      </div>
     </div>
   );
 }

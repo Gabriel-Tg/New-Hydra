@@ -1,21 +1,18 @@
 import React from "react";
 
-export default function Header() {
+export default function Header({ screenTitle = "Início" }) {
   return (
     <header className="header">
       <div className="header-inner">
-        {/* Substitui o texto CHRIS pelo logo */}
         <img
           src="/Logotipo NewHydra.jpeg"
           alt="New Hydra"
           className="brand-logo"
-          onError={(e) => {
-            e.currentTarget.src = "/Logotipo NewHydra.jpeg";
-          }}
+          onError={(e)=>{ e.currentTarget.src = "/Logotipo NewHydra.jpeg"; }}
         />
         <div>
           <div className="header-title">New Hydra</div>
-          <div className="header-sub">Agenda • Financeiro • Clientes</div>
+          <div className="header-sub">{screenTitle}</div>
         </div>
       </div>
     </header>
