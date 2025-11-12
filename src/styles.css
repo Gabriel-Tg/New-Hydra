@@ -1,35 +1,149 @@
-:root{ --bg:#f7f7f8; --text:#11181c; --card:#ffffff; --border:#e6e6e8; --muted:#6b7280; --primary:#111; }
+/* ============
+   Tema New Hydra (mobile-first)
+   ============ */
+:root{
+  --brand-start:#49D2E7;  /* ciano do anel */
+  --brand-mid:#5B8BFF;    /* azul intermediário */
+  --brand-end:#7A4DFF;    /* roxo final */
+  --bg:#F6F8FB;           /* fundo leve */
+  --card:#FFFFFF;
+  --text:#0F172A;         /* quase preto azulado */
+  --muted:#64748B;        /* cinza azulado */
+  --border:#E5E7EB;
+
+  --radius:16px;
+  --shadow:0 6px 24px rgba(16,24,40,.06);
+}
+
+/* Gradiente da marca */
+:root{
+  --brand-gradient: linear-gradient(135deg,var(--brand-start),var(--brand-mid) 45%,var(--brand-end));
+}
+
+/* Reset básico */
 *{ box-sizing:border-box; }
 html,body,#root{ height:100%; }
-body{ margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
-.container{ max-width:1080px; margin:0 auto; padding:16px; }
-.card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; }
-.btn{ border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:12px; cursor:pointer; }
-.btn.primary{ background:var(--primary); color:#fff; border-color:var(--primary); }
-.badge{ font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:#f3f4f6; color:#111; }
+body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+      background:var(--bg); color:var(--text); }
+
+/* Layout base mobile */
+.app{
+  min-height:100%;
+  display:flex; flex-direction:column;
+}
+.header{
+  position:sticky; top:0; z-index:20;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 14px;
+}
+.brand-badge{
+  width:36px; height:36px; border-radius:999px;
+  background:var(--brand-gradient);
+  display:grid; place-items:center;
+  color:#fff; font-weight:800; letter-spacing:.5px; font-size:12px;
+  box-shadow: var(--shadow);
+}
+.header-title{
+  font-weight:800; line-height:1.1;
+  font-size:18px;
+}
+.header-sub{ color:var(--muted); font-size:12px; }
+
+/* Conteúdo com espaço pro bottom bar */
+.main{
+  flex:1; padding:12px 14px 80px; /* bottom extra p/ nav fixa */
+}
+
+/* Cards */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:14px;
+}
 .row{ display:flex; gap:12px; flex-wrap:wrap; }
-.grid-2{ display:grid; gap:12px; grid-template-columns:repeat(2,minmax(0,1fr)); }
-.grid-3{ display:grid; gap:12px; grid-template-columns:repeat(3,minmax(0,1fr)); }
-.table{ width:100%; border-collapse:collapse; }
-.table th,.table td{ border-top:1px solid var(--border); padding:8px; text-align:left; }
-.table thead th{ background:#f8f8f8; color:#666; border-top:none; }
-.topbar{ position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border); }
-.topbar-inner{ display:flex; align-items:center; justify-content:space-between; height:56px; max-width:1080px; margin:0 auto; padding:0 16px; }
-.tabs{ display:flex; gap:8px; }
-.tabs .tab{ padding:8px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; cursor:pointer; }
-.tabs .tab.active{ background:#111; color:#fff; border-color:#111; }
-.switch{ display:inline-flex; border:1px solid var(--border); border-radius:14px; overflow:hidden; }
-.switch button{ padding:8px 12px; background:#fff; border:none; cursor:pointer; }
-.switch button.active{ background:#111; color:#fff; }
-.kpi{ background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px; }
-.kpi .label{ color:#666; font-size:12px; }
-.kpi .value{ font-weight:700; font-size:22px; margin-top:4px; }
-.kpi .sub{ color:#9ca3af; font-size:12px; margin-top:2px; }
+.stack{ display:grid; gap:12px; }
+
+/* Botões */
+.btn{
+  border:1px solid var(--border);
+  background:#fff; color:var(--text);
+  padding:10px 14px;
+  border-radius:14px; cursor:pointer;
+}
+.btn:active{ transform:translateY(1px); }
+.btn.primary{
+  background:var(--brand-gradient);
+  color:#fff; border-color:transparent;
+}
+
+/* Badges (status) */
+.badge{
+  display:inline-block; font-size:12px; padding:4px 10px;
+  border-radius:999px; border:1px solid var(--border);
+  background:#F1F5F9; color:#0F172A;
+}
+.badge.confirmed{ background:#E9FFF7; color:#065F46; border-color:#B7F5E2; }
+.badge.pending{ background:#FFF2D7; color:#92400E; border-color:#F4D5A5; }
+.badge.done{ background:#EAF7FF; color:#1E40AF; border-color:#CFE7FF; }
+.badge.overdue{ background:#FFE4E6; color:#7F1D1D; border-color:#FBCFD3; }
+
 .muted{ color:var(--muted); }
 
-/* status helpers */
-.badge.confirmed{ background:#eaffea; color:#166534; border-color:#c9e8c9; }
-.badge.pending{ background:#fff7df; color:#92400e; border-color:#f4e2b4; }
-.badge.canceled{ background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; text-decoration:line-through; }
-.badge.done{ background:#e6fffa; color:#065f46; border-color:#b3f0e5; }
-.badge.overdue{ background:#ffe5e5; color:#7f1d1d; border-color:#f5bcbc; }
+/* KPIs */
+.kpi{
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px; min-width:150px; flex:1;
+}
+.kpi .label{ color:var(--muted); font-size:12px; }
+.kpi .value{ font-weight:800; font-size:22px; margin-top:2px; }
+.kpi .sub{ color:#94A3B8; font-size:12px; }
+
+/* Lista de compromissos (mobile) */
+.item{
+  display:grid; gap:6px;
+}
+.item-head{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.item-actions{ display:flex; gap:8px; }
+
+/* Tabela -> cartões no mobile */
+.table{ display:none; }     /* escondemos tabela em telas pequenas */
+.table-card{
+  display:grid; gap:12px;
+}
+.table-card .row{
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:12px;
+}
+
+/* Bottom Tab Bar fixa (mobile) */
+.tabbar{
+  position:fixed; bottom:12px; left:12px; right:12px; z-index:40;
+  background:#fff; border:1px solid var(--border);
+  border-radius:18px; display:flex; justify-content:space-between;
+  padding:8px; box-shadow: var(--shadow);
+}
+.tab-btn{
+  flex:1; display:flex; align-items:center; justify-content:center;
+  gap:6px; padding:10px 6px; border-radius:12px; border:none; background:transparent; color:var(--muted);
+  font-weight:600;
+}
+.tab-btn.active{
+  color:#fff; background:var(--brand-gradient);
+}
+
+/* Responsivo: a partir de 640px viramos layout “tablet/desk” */
+@media (min-width:640px){
+  .main{ padding:16px 18px 24px; }
+  .table{ display:table; width:100%; border-collapse:collapse; }
+  .table th,.table td{ border-top:1px solid var(--border); padding:10px; text-align:left; }
+  .table thead th{ background:#F8FAFC; color:#64748B; border-top:none; }
+  .table-card{ display:none; }
+}
