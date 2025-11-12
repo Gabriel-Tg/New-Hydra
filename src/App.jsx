@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "./styles.css";
+import "./styles.mobile.css";
+import "./styles.desktop.css";
 import Header from "./components/Header.jsx";
 import MobileTabBar from "./components/MobileTabBar.jsx";
 import Inicio from "./pages/Inicio.jsx";
