@@ -15,7 +15,6 @@ export default function App() {
   return (
     <div className="app">
       <Header />
-
       <main className="main">
         {tab === "inicio" && <Inicio />}
         {tab === "agenda" && <Agenda />}
@@ -23,7 +22,6 @@ export default function App() {
         {tab === "clientes" && <Clientes />}
         {tab === "config" && <Config />}
       </main>
-
       <MobileTabBar tab={tab} setTab={setTab} />
       <NewMenu />
     </div>

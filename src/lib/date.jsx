@@ -1,37 +1,76 @@
-import React, { useState } from "react";
-import Hoje from "./pages/Hoje.jsx";
-import Agenda from "./pages/Agenda.jsx";
-import Financeiro from "./pages/Financeiro.jsx";
-import Clientes from "./pages/Clientes.jsx";
-import Config from "./pages/Config.jsx";
-import Header from "./components/Header.jsx";
-import MobileTabBar from "./components/MobileTabBar.jsx";
-import "./styles.css";
+// utilitários de data robustos (JS Date puro)
 
-export default function App() {
-  const [tab, setTab] = useState("hoje");
+export const pad = (n) => String(n).padStart(2, "0");
 
-  return (
-    <div className="app">
-      {/* Topo compacto com identidade visual */}
-      <Header />
+// garante Date a partir de number/string/Date
+export const toDate = (d) =>
+  (d instanceof Date ? new Date(d) : new Date(Number.isFinite(d) ? d : d));
 
-      {/* Conteúdo principal (já com padding para não colidir com a tab bar fixa) */}
-      <main className="main">
-        {tab === "hoje" && <Hoje />}
-        {tab === "agenda" && <Agenda />}
-        {tab === "financeiro" && <Financeiro />}
-        {tab === "clientes" && <Clientes />}
-        {tab === "config" && <Config />}
-      </main>
+export const fmtDate = (d) => {
+  const x = toDate(d);
+  return `${pad(x.getDate())}/${pad(x.getMonth() + 1)}/${x.getFullYear()}`;
+};
 
-      {/* Navegação inferior mobile-first */}
-      <MobileTabBar tab={tab} setTab={setTab} />
+export const fmtTime = (d) => {
+  const x = toDate(d);
+  return `${pad(x.getHours())}:${pad(x.getMinutes())}`;
+};
 
-      {/* Ação principal (flutuante) */}
-      <div style={{ position: "fixed", right: 16, bottom: 88, zIndex: 50 }}>
-        <button className="btn primary">+ Novo</button>
-      </div>
-    </div>
-  );
-}
+export const addMinutes = (d, mins) => {
+  const x = toDate(d);
+  x.setMinutes(x.getMinutes() + Number(mins || 0));
+  return x;
+};
+
+export const addDays = (d, n) => {
+  const x = toDate(d);
+  x.setDate(x.getDate() + Number(n || 0));
+  return x;
+};
+
+export const startOfDay = (d) => {
+  const x = toDate(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+
+export const endOfDay = (d) => {
+  const x = toDate(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+};
+
+// semana começando na segunda
+export const startOfWeek = (d) => {
+  const x = toDate(d);
+  const dow = (x.getDay() + 6) % 7; // Mon=0 .. Sun=6
+  x.setDate(x.getDate() - dow);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+
+export const endOfWeek = (d) => addDays(startOfWeek(d), 6);
+
+export const isSameDay = (a, b) => {
+  const da = toDate(a), db = toDate(b);
+  return da.getFullYear() === db.getFullYear()
+      && da.getMonth() === db.getMonth()
+      && da.getDate() === db.getDate();
+};
+
+export const isSameMonth = (a, b) => {
+  const da = toDate(a), db = toDate(b);
+  return da.getFullYear() === db.getFullYear()
+      && da.getMonth() === db.getMonth();
+};
+
+export const rangeDays = (from, to) => {
+  const res = [];
+  let cur = startOfDay(from);
+  const end = endOfDay(to);
+  while (cur <= end) {
+    res.push(new Date(cur));
+    cur = addDays(cur, 1);
+  }
+  return res;
+};

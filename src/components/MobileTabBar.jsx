@@ -2,7 +2,7 @@ import React from "react";
 
 export default function MobileTabBar({ tab, setTab }) {
   const tabs = [
-    ["inicio","Inicio"],
+    ["inicio","Início"],
     ["agenda","Agenda"],
     ["financeiro","Finanças"],
     ["clientes","Clientes"],
