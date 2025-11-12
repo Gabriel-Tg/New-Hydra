@@ -10,17 +10,15 @@ export default function NewMenu(){
 
   return (
     <>
-      {/* FAB */}
       <div style={{ position:"fixed", right:16, bottom:88, zIndex:50 }}>
-        <button className="btn primary" onClick={()=>setType("menu")}>+ Novo</button>
+        <button className="btn primary ripple" onClick={()=>setType("menu")}>+ Novo</button>
       </div>
 
-      {/* Modal central com 3 opções (grande e centralizado) */}
       <Modal open={type==="menu"} onClose={closeAll} title="Criar novo">
-        <div style={{display:"grid", gap:12}}>
-          <button className="btn" onClick={()=>setType("appt")}>Agendar com cliente</button>
-          <button className="btn" onClick={()=>setType("rec")}>Adicionar a receber</button>
-          <button className="btn" onClick={()=>setType("pay")}>Adicionar a pagar</button>
+        <div className="stack">
+          <button className="btn slide-up" onClick={()=>setType("appt")}>Agendar com cliente</button>
+          <button className="btn slide-up" onClick={()=>setType("rec")}>Adicionar a receber</button>
+          <button className="btn slide-up" onClick={()=>setType("pay")}>Adicionar a pagar</button>
         </div>
       </Modal>
 
@@ -31,10 +29,9 @@ export default function NewMenu(){
   );
 }
 
-/* ---------- Forms ---------- */
-
 function NewAppointment({ open, onClose }){
   const add = useStore(s=>s.addAppointment);
+  const [saving, setSaving] = useState(false);
   const [clientName, setClientName] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0,10));
   const [start, setStart] = useState("09:00");
@@ -45,16 +42,14 @@ function NewAppointment({ open, onClose }){
 
   const submit = (e) => {
     e.preventDefault();
+    setSaving(true);
     const endTime = addMinutes(new Date(`${date}T${start}:00`), Number(duration));
     add({
-      client_name: clientName,
-      service,
-      date,
-      start,
+      client_name: clientName, service, date, start,
       end: `${String(endTime.getHours()).padStart(2,"0")}:${String(endTime.getMinutes()).padStart(2,"0")}`,
       location, notes
     });
-    onClose();
+    setTimeout(()=>{ setSaving(false); onClose(); }, 200); // micro delay p/ animação
   };
 
   return (
@@ -71,7 +66,7 @@ function NewAppointment({ open, onClose }){
         <textarea className="input" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas" style={{minHeight:80}} />
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="btn primary">Salvar</button>
+          <button type="submit" className={`btn primary ${saving?"saving":""}`}>Salvar</button>
         </div>
       </form>
     </Modal>
@@ -80,6 +75,7 @@ function NewAppointment({ open, onClose }){
 
 function NewReceivable({ open, onClose }){
   const add = useStore(s=>s.addReceivable);
+  const [saving, setSaving] = useState(false);
   const [customer, setCustomer] = useState("");
   const [due, setDue] = useState(()=> new Date().toISOString().slice(0,10));
   const [amount, setAmount] = useState("");
@@ -87,8 +83,9 @@ function NewReceivable({ open, onClose }){
 
   const submit = (e) => {
     e.preventDefault();
+    setSaving(true);
     add({ customer, due_date: due, amount, method });
-    onClose();
+    setTimeout(()=>{ setSaving(false); onClose(); }, 200);
   };
 
   return (
@@ -107,7 +104,7 @@ function NewReceivable({ open, onClose }){
         </select>
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="btn primary">Salvar</button>
+          <button type="submit" className={`btn primary ${saving?"saving":""}`}>Salvar</button>
         </div>
       </form>
     </Modal>
@@ -116,6 +113,7 @@ function NewReceivable({ open, onClose }){
 
 function NewPayable({ open, onClose }){
   const add = useStore(s=>s.addPayable);
+  const [saving, setSaving] = useState(false);
   const [description, setDescription] = useState("");
   const [due, setDue] = useState(()=> new Date().toISOString().slice(0,10));
   const [amount, setAmount] = useState("");
@@ -123,8 +121,9 @@ function NewPayable({ open, onClose }){
 
   const submit = (e) => {
     e.preventDefault();
+    setSaving(true);
     add({ description, due_date: due, amount, category });
-    onClose();
+    setTimeout(()=>{ setSaving(false); onClose(); }, 200);
   };
 
   return (
@@ -138,7 +137,7 @@ function NewPayable({ open, onClose }){
         <input className="input" placeholder="Categoria" value={category} onChange={e=>setCategory(e.target.value)} />
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="btn primary">Salvar</button>
+          <button type="submit" className={`btn primary ${saving?"saving":""}`}>Salvar</button>
         </div>
       </form>
     </Modal>

@@ -8,6 +8,7 @@ import Agenda from "./pages/Agenda.jsx";
 import Financeiro from "./pages/Financeiro.jsx";
 import Clientes from "./pages/Clientes.jsx";
 import NewMenu from "./components/NewMenu.jsx";
+import Toast from "./components/Toast.jsx";
 
 export default function App() {
   const [tab, setTab] = useState("inicio");
@@ -22,6 +23,7 @@ export default function App() {
       </main>
       <MobileTabBar tab={tab} setTab={setTab} />
       <NewMenu />
+      <Toast />
     </div>
   );
 }

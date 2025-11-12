@@ -1,21 +1,17 @@
 import React from "react";
 
-export default function Modal({ open, title, onClose, children }) {
+export default function Modal({ open, onClose, title, children }){
   if (!open) return null;
   return (
-    <div style={{
-      position:"fixed", inset:0, background:"rgba(15,23,42,.35)",
-      display:"grid", placeItems:"center", zIndex:100
-    }}
-      onClick={onClose}
-    >
-      <div className="card" style={{ width:"min(520px,92vw)" }} onClick={(e)=>e.stopPropagation()}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="modal-panel slide-up">
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
           <div style={{fontWeight:800}}>{title}</div>
-          <button className="btn" onClick={onClose}>✕</button>
+          <button className="btn ghost" onClick={onClose}>Fechar</button>
         </div>
         <div className="stack">{children}</div>
       </div>
-    </div>
+    </>
   );
 }

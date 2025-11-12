@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-const LS_KEY = "nh_store_v3";
+const LS_KEY = "nh_store_v4";
 const uid = (p="id") => `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;
 
 const load = () => {
@@ -22,6 +22,7 @@ const initial = (() => {
     receivables: p.receivables || [],
     payables: p.payables || [],
     cashOpening: p.cashOpening || {}, // { 'YYYY-MM': number }
+    uiToasts: [], // não persiste
   };
 })();
 
@@ -32,10 +33,21 @@ export const useStore = create((set, get) => {
     set(partial);
   };
 
+  const pushToast = (t) => {
+    const id = uid("toast");
+    set({ uiToasts: [...get().uiToasts, { id, type:t.type||"success", title:t.title||"", desc:t.desc||"" }] });
+    setTimeout(() => {
+      set({ uiToasts: get().uiToasts.filter(x => x.id !== id) });
+    }, t.ttl ?? 2200);
+  };
+
   return {
     ...initial,
 
-    /* -------- Clients -------- */
+    /* UI */
+    pushToast,
+
+    /* Clients */
     addClientIfMissing: (name) => {
       if (!name?.trim()) return null;
       const s = get();
@@ -47,7 +59,7 @@ export const useStore = create((set, get) => {
       return id;
     },
 
-    /* -------- Appointments -------- */
+    /* Appointments */
     addAppointment: (data) => {
       const s = get();
       const client_id = data.client_id || get().addClientIfMissing(data.client_name);
@@ -57,29 +69,33 @@ export const useStore = create((set, get) => {
         service: data.service || "",
         start_at: new Date(`${data.date}T${data.start}:00`).getTime(),
         end_at: new Date(`${data.date}T${data.end}:00`).getTime(),
-        status: "pending", // padrão
+        status: "pending",
         location: data.location || "",
         notes: data.notes || ""
       };
       const appts = [...s.appts, appt];
       save({ appts });
+      pushToast({ title:"Agendamento salvo!" });
     },
     confirmAppointment: (id) => {
       const appts = get().appts.map(a => a.id===id ? { ...a, status:"confirmed" } : a);
       save({ appts });
+      pushToast({ title:"Agendamento confirmado" });
     },
     rescheduleAppointment: (id, { date, start, end }) => {
       const start_at = new Date(`${date}T${start}:00`).getTime();
       const end_at = new Date(`${date}T${end}:00`).getTime();
       const appts = get().appts.map(a => a.id===id ? { ...a, start_at, end_at, status:"confirmed" } : a);
       save({ appts });
+      pushToast({ title:"Reagendado com sucesso" });
     },
     completeAppointment: (id) => {
       const appts = get().appts.filter(a => a.id!==id);
       save({ appts });
+      pushToast({ title:"Atendimento concluído" });
     },
 
-    /* -------- Receivables -------- */
+    /* Receivables */
     addReceivable: (data) => {
       const s = get();
       const client_id = get().addClientIfMissing(data.customer);
@@ -94,13 +110,15 @@ export const useStore = create((set, get) => {
       };
       const receivables = [...s.receivables, rec];
       save({ receivables });
+      pushToast({ title:"Recebível adicionado" });
     },
     markRecPaid: (id) => {
       const receivables = get().receivables.map(r => r.id===id ? { ...r, status:"paid" } : r);
       save({ receivables });
+      pushToast({ title:"Recebível marcado como pago" });
     },
 
-    /* -------- Payables -------- */
+    /* Payables */
     addPayable: (data) => {
       const s = get();
       const pay = {
@@ -113,16 +131,19 @@ export const useStore = create((set, get) => {
       };
       const payables = [...s.payables, pay];
       save({ payables });
+      pushToast({ title:"Conta a pagar adicionada" });
     },
     markPayPaid: (id) => {
       const payables = get().payables.map(p => p.id===id ? { ...p, status:"paid" } : p);
       save({ payables });
+      pushToast({ title:"Pagamento efetuado" });
     },
 
-    /* -------- Cash flow -------- */
+    /* Cash flow */
     setCashOpening: (ym, value) => {
       const cashOpening = { ...get().cashOpening, [ym]: Number(value||0) };
       save({ cashOpening });
+      pushToast({ title:"Saldo inicial atualizado" });
     },
   };
 });
