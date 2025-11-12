@@ -1,5 +1,5 @@
 /* Desktop refinements (>=900px) */
-@media (min-width: 900px){
+@media (min-width: 901px){
   .main{ padding:20px 24px 24px; }
   .header-inner{ padding:12px 24px; }
   .header-title{ font-size:20px; }

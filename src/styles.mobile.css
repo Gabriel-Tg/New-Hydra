@@ -242,3 +242,20 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 .modal-backdrop{ z-index:300; }
 .modal-panel{ z-index:301; }
 
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;     /* evita barra horizontal que “encolhe” a página */
+}
+
+/* o track do swipe ocupa n telas, mas não deve criar overflow visual */
+.views-track { will-change: transform; }
+.view { width: 100vw; max-width: 100vw; }
+
+/* header e logo não devem esticar a largura */
+.header-inner { min-width: 0; }
+.brand-logo { max-width: 45vw; height: 34px; }
+
+/* margem inferior para não encostar na tabbar no mobile */
+.main { padding-bottom: 96px; }
+
