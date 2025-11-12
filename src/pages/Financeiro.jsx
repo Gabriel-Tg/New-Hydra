@@ -56,7 +56,8 @@ export default function Financeiro(){
   const saidasPagas = sum(pInRange, x=>x.status==="paid");
   const saldoReal = opening + entradasPagas - saidasPagas;
 
-  const [editingOpening, setEditingOpening] = useState(false);
+  // Saldo inicial via MODAL (evita quebra de linha)
+  const [openOpening, setOpenOpening] = useState(false);
   const [openingInput, setOpeningInput] = useState(() => String(opening));
 
   return (
@@ -156,31 +157,12 @@ export default function Financeiro(){
       {/* FLUXO DE CAIXA */}
       {tab==="fluxo" && (
         <div className="card slide-up">
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:8}}>
             <strong>Fluxo de Caixa</strong>
-            {!editingOpening ? (
-              <button className="pill ripple" onClick={()=>{ setOpeningInput(String(opening)); setEditingOpening(true); }}>
-                <span className="hint">Saldo inicial {monthKey}</span>
-                <strong>{formatBRL(opening)}</strong>
-              </button>
-            ) : (
-              <div className="pill fade-in" style={{gap:6}}>
-                <span className="hint">Saldo inicial</span>
-                <input
-                  className="input"
-                  style={{width:140, padding:"6px 10px"}}
-                  inputMode="decimal"
-                  value={openingInput}
-                  onChange={(e)=>setOpeningInput(e.target.value)}
-                />
-                <button className="btn ripple" onClick={()=>setEditingOpening(false)}>Cancelar</button>
-                <button className="btn primary ripple" onClick={()=>{
-                  const val = parseBRL(openingInput);
-                  setOpening(monthKey, val);
-                  setEditingOpening(false);
-                }}>Salvar</button>
-              </div>
-            )}
+            <button className="pill ripple" onClick={()=>{ setOpeningInput(String(opening)); setOpenOpening(true); }}>
+              <span className="hint">Saldo inicial {monthKey}</span>
+              <strong>{formatBRL(opening)}</strong>
+            </button>
           </div>
 
           <div className="row">
@@ -206,6 +188,34 @@ export default function Financeiro(){
         </div>
         <div style={{display:"flex", justifyContent:"flex-end", gap:8}}>
           <button className="btn ripple" onClick={()=>setShowPicker(false)}>Fechar</button>
+        </div>
+      </Modal>
+
+      {/* Modal - Saldo inicial (sem quebra de linhas) */}
+      <Modal open={openOpening} onClose={()=>setOpenOpening(false)} title={`Saldo inicial — ${monthKey}`}>
+        <div className="stack">
+          <div className="muted">Informe o saldo de abertura do mês selecionado.</div>
+          <input
+            className="input"
+            inputMode="decimal"
+            value={openingInput}
+            onChange={(e)=>setOpeningInput(e.target.value)}
+            placeholder="Ex.: 1500,00"
+          />
+          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+            <div className="muted">Prévia: <strong>{formatBRL(parseBRL(openingInput))}</strong></div>
+            <div style={{display:"flex", gap:8}}>
+              <button className="btn ripple" onClick={()=>setOpenOpening(false)}>Cancelar</button>
+              <button
+                className="btn primary ripple"
+                onClick={()=>{
+                  const val = parseBRL(openingInput);
+                  setOpening(monthKey, val);
+                  setOpenOpening(false);
+                }}
+              >Salvar</button>
+            </div>
+          </div>
         </div>
       </Modal>
     </div>

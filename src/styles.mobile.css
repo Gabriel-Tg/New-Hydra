@@ -36,8 +36,16 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 
 .muted{ color:var(--muted); }
 
-.card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
-  padding:14px; transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); will-change: transform;
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:14px;
+  transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+  will-change: transform;
+  position: relative;        /* NOVO: popovers ficam sobre o card */
+  overflow: visible;         /* NOVO: deixa o popover “sair” do card */
 }
 .card:hover{ transform:translateY(-1px); box-shadow:0 8px 28px rgba(16,24,40,.08); }
 
@@ -93,6 +101,7 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 .tabbar{ position:fixed; bottom:12px; left:12px; right:12px; z-index:40; background:#fff; border:1px solid var(--border); border-radius:18px; display:flex; justify-content:space-between; padding:8px; box-shadow:var(--shadow); }
 .tab-btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 6px; border-radius:12px; border:none; background:transparent; color:var(--muted); font-weight:600;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  
 }
 .tab-btn:hover{ transform:translateY(-1px); }
 .tab-btn.active{ color:#fff; background:var(--brand-gradient); }
@@ -117,10 +126,13 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 .pill .hint{ color:var(--muted); font-size:12px; }
 .pill-group{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 
-.popover{ position:relative; }
+.popover{ position:relative; z-index: 201; }      /* NOVO */
 .popover-panel{
-  position:absolute; right:0; top:calc(100% + 8px); width:240px; z-index:30;
-  background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow);
+  position:absolute;
+  right:0; top:calc(100% + 8px);
+  width:240px; z-index: 200;                      /* Aumentado */
+  background:#fff; border:1px solid var(--border);
+  border-radius:14px; box-shadow:var(--shadow);
   padding:10px; animation: fade-in var(--dur) var(--ease), slide-up var(--dur) var(--ease);
 }
 
@@ -146,3 +158,6 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 @media (prefers-reduced-motion: reduce){
   *{ animation:none !important; transition:none !important; }
 }
+.tabbar{ z-index:140; }           /* já alto, mas abaixo do popover 200+ */
+.modal-backdrop{ z-index: 300; }  /* modal sempre acima de tudo */
+.modal-panel{ z-index: 301; }     /* painel do modal também */
