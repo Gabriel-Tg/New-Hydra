@@ -15,9 +15,9 @@ export default function NewMenu(){
         <button className="btn primary" onClick={()=>setType("menu")}>+ Novo</button>
       </div>
 
-      {/* Modal central com 3 opções */}
+      {/* Modal central com 3 opções (grande e centralizado) */}
       <Modal open={type==="menu"} onClose={closeAll} title="Criar novo">
-        <div style={{display:"grid", gap:10}}>
+        <div style={{display:"grid", gap:12}}>
           <button className="btn" onClick={()=>setType("appt")}>Agendar com cliente</button>
           <button className="btn" onClick={()=>setType("rec")}>Adicionar a receber</button>
           <button className="btn" onClick={()=>setType("pay")}>Adicionar a pagar</button>
@@ -62,13 +62,13 @@ function NewAppointment({ open, onClose }){
       <form className="stack" onSubmit={submit}>
         <ClientAutocomplete value={clientName} onChange={setClientName} />
         <div className="row">
-          <input className="input" type="date" value={date} onChange={e=>setDate(e.target.value)} style={input}/>
-          <input className="input" type="time" value={start} onChange={e=>setStart(e.target.value)} style={input}/>
-          <input className="input" type="number" min="15" step="15" value={duration} onChange={e=>setDuration(e.target.value)} style={input} placeholder="Duração (min)" />
+          <input className="input" type="date" value={date} onChange={e=>setDate(e.target.value)} />
+          <input className="input" type="time" value={start} onChange={e=>setStart(e.target.value)} />
+          <input className="input" type="number" min="15" step="15" value={duration} onChange={e=>setDuration(e.target.value)} placeholder="Duração (min)" />
         </div>
-        <input className="input" value={service} onChange={e=>setService(e.target.value)} placeholder="Serviço" style={input}/>
-        <input className="input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Local (opcional)" style={input}/>
-        <textarea className="input" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas" style={{...input, minHeight:80}} />
+        <input className="input" value={service} onChange={e=>setService(e.target.value)} placeholder="Serviço" />
+        <input className="input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Local (opcional)" />
+        <textarea className="input" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas" style={{minHeight:80}} />
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
           <button type="submit" className="btn primary">Salvar</button>
@@ -96,10 +96,10 @@ function NewReceivable({ open, onClose }){
       <form className="stack" onSubmit={submit}>
         <ClientAutocomplete value={customer} onChange={setCustomer} placeholder="Cliente" />
         <div className="row">
-          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} style={input}/>
-          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} style={input}/>
+          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} />
+          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} />
         </div>
-        <select className="input" value={method} onChange={e=>setMethod(e.target.value)} style={input}>
+        <select className="input" value={method} onChange={e=>setMethod(e.target.value)}>
           <option value="pix">Pix</option>
           <option value="card">Cartão</option>
           <option value="cash">Dinheiro</option>
@@ -130,12 +130,12 @@ function NewPayable({ open, onClose }){
   return (
     <Modal open={open} onClose={onClose} title="Novo a pagar">
       <form className="stack" onSubmit={submit}>
-        <input className="input" placeholder="Descrição" value={description} onChange={e=>setDescription(e.target.value)} style={input}/>
+        <input className="input" placeholder="Descrição" value={description} onChange={e=>setDescription(e.target.value)} />
         <div className="row">
-          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} style={input}/>
-          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} style={input}/>
+          <input className="input" type="date" value={due} onChange={e=>setDue(e.target.value)} />
+          <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} />
         </div>
-        <input className="input" placeholder="Categoria" value={category} onChange={e=>setCategory(e.target.value)} style={input}/>
+        <input className="input" placeholder="Categoria" value={category} onChange={e=>setCategory(e.target.value)} />
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
           <button type="submit" className="btn primary">Salvar</button>
@@ -144,5 +144,3 @@ function NewPayable({ open, onClose }){
     </Modal>
   );
 }
-
-const input = { width:"100%", padding:"10px 12px", border:"1px solid var(--border)", borderRadius:12 };
