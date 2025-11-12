@@ -14,7 +14,6 @@
 
   --brand-gradient: linear-gradient(135deg,var(--brand-start),var(--brand-mid) 45%,var(--brand-end));
 
-  /* Motion tokens */
   --ease: cubic-bezier(.22,.61,.36,1);
   --dur-fast: 120ms;
   --dur: 220ms;
@@ -35,14 +34,17 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 
 .main{ flex:1; padding:12px 14px 88px; }
 
+.muted{ color:var(--muted); }
+
 .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
   padding:14px; transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); will-change: transform;
 }
 .card:hover{ transform:translateY(-1px); box-shadow:0 8px 28px rgba(16,24,40,.08); }
 
-.row{ display:flex; gap:12px; flex-wrap:wrap; }
+.row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
 .stack{ display:grid; gap:12px; }
 
+/* --- Botões / Inputs --- */
 .btn{ border:1px solid var(--border); background:#fff; color:var(--text); padding:10px 14px; border-radius:14px; cursor:pointer;
   transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
   will-change: transform, box-shadow, opacity;
@@ -51,7 +53,6 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 .btn:active{ transform:translateY(0); }
 .btn.primary{ background:var(--brand-gradient); color:#fff; border-color:transparent; }
 .btn.ghost{ background:transparent; border-color:transparent; color:var(--muted); }
-
 .btn.saving{ opacity:.8; pointer-events:none; position:relative; }
 .btn.saving::after{
   content:""; width:16px; height:16px; border-radius:50%;
@@ -65,6 +66,7 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 }
 .input:focus{ outline:none; border-color:#BBD2FF; box-shadow:0 0 0 3px rgba(91,139,255,.15); }
 
+/* --- Badges/KPIs --- */
 .badge{ display:inline-block; font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:#F1F5F9; color:#0F172A; }
 .badge.confirmed{ background:#E9FFF7; color:#065F46; border-color:#B7F5E2; }
 .badge.pending{ background:#FFF2D7; color:#92400E; border-color:#F4D5A5; }
@@ -77,8 +79,8 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 .kpi:hover{ transform:translateY(-1px); box-shadow:0 8px 28px rgba(16,24,40,.08); }
 .kpi .label{ color:var(--muted); font-size:12px; }
 .kpi .value{ font-weight:800; font-size:22px; margin-top:2px; }
-.kpi .sub{ color:#94A3B8; font-size:12px; }
 
+/* --- Listas / Tabelas --- */
 .item{ display:grid; gap:6px; }
 .item-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .item-actions{ display:flex; gap:8px; }
@@ -87,6 +89,7 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 .table-card{ display:grid; gap:12px; }
 .table-row{ display:flex; justify-content:space-between; gap:12px; border-top:1px solid var(--border); padding-top:8px; }
 
+/* --- Tab bar --- */
 .tabbar{ position:fixed; bottom:12px; left:12px; right:12px; z-index:40; background:#fff; border:1px solid var(--border); border-radius:18px; display:flex; justify-content:space-between; padding:8px; box-shadow:var(--shadow); }
 .tab-btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 6px; border-radius:12px; border:none; background:transparent; color:var(--muted); font-weight:600;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
@@ -94,20 +97,34 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 .tab-btn:hover{ transform:translateY(-1px); }
 .tab-btn.active{ color:#fff; background:var(--brand-gradient); }
 
-/* Toast */
+/* --- Toast --- */
 .toast-wrap{ position:fixed; left:12px; right:12px; bottom:80px; z-index:60; display:grid; gap:10px; }
 .toast{ background:#111827; color:#fff; border-radius:14px; padding:12px 14px; box-shadow:0 10px 30px rgba(17,24,39,.3);
   animation: slide-up var(--dur) var(--ease), fade-in var(--dur) var(--ease); }
 .toast.success{ background:#065F46; }
 .toast.error{ background:#7F1D1D; }
 
-/* Modal animado */
+/* --- Modal --- */
 .modal-backdrop{ position:fixed; inset:0; background:rgba(2,6,23,.45); z-index:90;
   animation: fade-in var(--dur) var(--ease); }
 .modal-panel{ position:fixed; inset:auto 16px 90px 16px; z-index:91; background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow);
   padding:16px; max-width:720px; margin:0 auto; animation: scale-in var(--dur) var(--ease); }
 
-/* Util classes de motion */
+/* --- NOVO: toolbar, chips e popover (para Financeiro) --- */
+.toolbar{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; }
+.toolbar-start{ display:flex; flex-direction:column; gap:4px; }
+.pill{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); border-radius:999px; background:#fff; }
+.pill .hint{ color:var(--muted); font-size:12px; }
+.pill-group{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+
+.popover{ position:relative; }
+.popover-panel{
+  position:absolute; right:0; top:calc(100% + 8px); width:240px; z-index:30;
+  background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow);
+  padding:10px; animation: fade-in var(--dur) var(--ease), slide-up var(--dur) var(--ease);
+}
+
+/* --- Motion helpers --- */
 .fade-in{ animation: fade-in var(--dur) var(--ease); }
 .slide-up{ animation: slide-up var(--dur) var(--ease); }
 .scale-in{ animation: scale-in var(--dur) var(--ease); }
@@ -116,21 +133,16 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
   content:""; position:absolute; inset:auto; left:50%; top:50%; width:0; height:0; background:rgba(255,255,255,.35); border-radius:999px;
   transform:translate(-50%,-50%); opacity:0; pointer-events:none;
 }
-.ripple:active:after{
-  animation:ripple .5s linear;
-}
+.ripple:active:after{ animation:ripple .5s linear; }
 
-/* Keyframes */
+/* --- Keyframes --- */
 @keyframes fade-in{ from{ opacity:0 } to{ opacity:1 } }
 @keyframes slide-up{ from{ transform:translateY(8px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
 @keyframes scale-in{ from{ transform:scale(.97); opacity:0 } to{ transform:scale(1); opacity:1 } }
 @keyframes spin{ to{ transform:rotate(360deg) } }
-@keyframes ripple{
-  0%{ width:0; height:0; opacity:.6 }
-  100%{ width:220%; height:220%; opacity:0 }
-}
+@keyframes ripple{ 0%{ width:0; height:0; opacity:.6 } 100%{ width:220%; height:220%; opacity:0 } }
 
-/* Acessibilidade: reduz movimentos */
+/* Acessibilidade */
 @media (prefers-reduced-motion: reduce){
   *{ animation:none !important; transition:none !important; }
 }

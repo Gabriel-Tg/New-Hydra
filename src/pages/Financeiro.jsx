@@ -3,6 +3,7 @@ import { useStore } from "../lib/store.jsx";
 import Modal from "../components/Modal.jsx";
 import { formatBRL, parseBRL } from "../lib/money.js";
 
+/* helpers de período */
 const toISO = (d) => new Date(d).toISOString().slice(0,10);
 function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
 function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); return x; }
@@ -60,21 +61,21 @@ export default function Financeiro(){
 
   return (
     <div className="stack fade-in">
-      {/* Toolbar elegante */}
+      {/* TOOLBAR */}
       <div className="card">
-        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap"}}>
-          <div>
+        <div className="toolbar">
+          <div className="toolbar-start">
             <div style={{fontWeight:800, fontSize:18}}>Financeiro</div>
-            <div className="muted" style={{fontSize:12}}>Filtre por período e gerencie seus lançamentos</div>
+            <div className="muted" style={{fontSize:12}}>Filtre o período, edite o saldo inicial e gerencie lançamentos</div>
           </div>
 
-          <div className="row" style={{alignItems:"center"}}>
-            <div style={{position:"relative"}}>
+          <div className="pill-group">
+            <div className="popover">
               <button className="pill ripple" onClick={()=>setShowPresets(v=>!v)}>
                 <span className="hint">Período</span><strong>Pré-definidos</strong>
               </button>
               {showPresets && (
-                <div className="card fade-in" style={{position:"absolute", right:0, top:"calc(100% + 8px)", width:220, zIndex:30}}>
+                <div className="popover-panel">
                   <div className="stack">
                     <button className="btn" onClick={()=>applyPreset("today")}>Hoje</button>
                     <button className="btn" onClick={()=>applyPreset("week")}>Esta semana</button>
@@ -86,21 +87,25 @@ export default function Financeiro(){
               )}
             </div>
 
-            <div className="pill"><span className="hint">De</span><strong>{from.split("-").reverse().join("/")}</strong></div>
-            <div className="pill"><span className="hint">Até</span><strong>{to.split("-").reverse().join("/")}</strong></div>
+            <div className="pill">
+              <span className="hint">De</span><strong>{from.split("-").reverse().join("/")}</strong>
+            </div>
+            <div className="pill">
+              <span className="hint">Até</span><strong>{to.split("-").reverse().join("/")}</strong>
+            </div>
             <button className="btn ghost ripple" onClick={()=>setShowPicker(true)}>Alterar datas</button>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* TABS */}
       <div className="row">
         <button className={`btn ripple ${tab==="rec"?"primary":""}`} onClick={()=>setTab("rec")}>A Receber</button>
         <button className={`btn ripple ${tab==="pay"?"primary":""}`} onClick={()=>setTab("pay")}>A Pagar</button>
         <button className={`btn ripple ${tab==="fluxo"?"primary":""}`} onClick={()=>setTab("fluxo")}>Fluxo de Caixa</button>
       </div>
 
-      {/* Recebíveis */}
+      {/* RECEBÍVEIS */}
       {tab==="rec" && (
         <div className="card slide-up">
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
@@ -109,7 +114,7 @@ export default function Financeiro(){
           </div>
           <div className="table-card">
             {rInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
-            {rInRange.map((r,i)=>(
+            {rInRange.map((r)=>(
               <div key={r.id} className="table-row fade-in">
                 <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
                 <div style={{flex:1}}>{r.customer}</div>
@@ -124,7 +129,7 @@ export default function Financeiro(){
         </div>
       )}
 
-      {/* Pagáveis */}
+      {/* PAGÁVEIS */}
       {tab==="pay" && (
         <div className="card slide-up">
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
@@ -133,7 +138,7 @@ export default function Financeiro(){
           </div>
           <div className="table-card">
             {pInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
-            {pInRange.map((p,i)=>(
+            {pInRange.map((p)=>(
               <div key={p.id} className="table-row fade-in">
                 <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
                 <div style={{flex:1}}>{p.description}</div>
@@ -148,7 +153,7 @@ export default function Financeiro(){
         </div>
       )}
 
-      {/* Fluxo de Caixa */}
+      {/* FLUXO DE CAIXA */}
       {tab==="fluxo" && (
         <div className="card slide-up">
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
