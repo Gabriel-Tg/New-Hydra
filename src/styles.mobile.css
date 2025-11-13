@@ -245,7 +245,7 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 html, body {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;     /* evita barra horizontal que “encolhe” a página */
+  overflow-x: auto;   /* deixa rolar se realmente for maior que a tela */
 }
 
 /* o track do swipe ocupa n telas, mas não deve criar overflow visual */
@@ -259,3 +259,30 @@ html, body {
 /* margem inferior para não encostar na tabbar no mobile */
 .main { padding-bottom: 96px; }
 
+/* Ajuste de linhas no MOBILE para não cortar conteúdo à direita */
+@media (max-width: 680px) {
+  .table-row {
+    flex-wrap: wrap;              /* permite quebrar para a linha de baixo */
+    row-gap: 6px;
+  }
+
+  .table-row > * {
+    max-width: 100%;
+  }
+
+  /* Linhas de ações (tipo baixar PDF / WhatsApp / remover) */
+  .table-row .btn {
+    flex: 0 0 auto;
+  }
+
+  /* Linhas em geral (inclui algumas .row que usei nas telas novas) */
+  .row {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .row > .input {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}

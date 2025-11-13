@@ -1,6 +1,3 @@
-// Geração de PDF direto no navegador (jsPDF) no padrão New Hydra
-// Uso: await gerarPdfOrcamento(dados) -> retorna { blob, fileName }
-
 import { jsPDF } from "jspdf";
 
 /** Converte imagem em dataURL (para logo) */
@@ -12,7 +9,6 @@ async function loadImageDataURL(src) {
     img.onload = res;
     img.onerror = rej;
   });
-  // desenha em canvas p/ virar dataURL
   const canvas = document.createElement("canvas");
   canvas.width = img.width;
   canvas.height = img.height;
@@ -21,12 +17,11 @@ async function loadImageDataURL(src) {
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
-/** util: quebra texto por largura */
+/** quebra texto pela largura */
 function splitText(doc, text, maxWidth) {
   return doc.splitTextToSize(String(text || ""), maxWidth);
 }
 
-/** formata dd/mm/aaaa */
 function fmtDataISO(iso) {
   try {
     const d = iso ? new Date(iso) : new Date();
@@ -36,104 +31,123 @@ function fmtDataISO(iso) {
   }
 }
 
-/** Cabeçalho padrão New Hydra */
-function drawHeader(doc, { logoDataUrl, empresa = "New Hydra", titulo = "Orçamento de Serviços" }, x, y, pageW) {
-  const margin = 16;
-  const headerH = 28;
+/** Cabeçalho com logo + faixa suave */
+function drawHeader(doc, { logoDataUrl, empresa, titulo }, pageW) {
+  const margin = 32;
+  const headerH = 34;
+  const y = margin;
 
-  // faixa suave azul/roxa (inspiração da sua paleta)
   doc.setFillColor(236, 242, 255);
-  doc.rect(margin, y, pageW - margin * 2, headerH, "F");
+  doc.roundedRect(margin, y, pageW - margin * 2, headerH, 10, 10, "F");
 
   if (logoDataUrl) {
-    // logo à esquerda
-    const h = 16;
+    const h = 22;
     const w = h * 1.0;
-    doc.addImage(logoDataUrl, "JPEG", margin + 6, y + 6, w, h);
+    doc.addImage(logoDataUrl, "JPEG", margin + 12, y + (headerH - h) / 2, w, h);
   }
 
-  // empresa + título
+  // textos
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(13, 22, 44);
-  doc.setFontSize(12);
-  doc.text(empresa, margin + 28, y + 13);
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(13);
+  doc.text(empresa, margin + 48, y + 15);
 
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(64, 78, 117);
+  doc.setTextColor(71, 85, 105);
   doc.setFontSize(11);
-  doc.text(titulo, margin + 28, y + 22);
+  doc.text(titulo, margin + 48, y + 27);
 
-  return y + headerH + 8; // nova posição Y
+  return y + headerH + 18; // novo Y livre
 }
 
-/** bloco rotulado (rótulo em negrito, conteúdo com quebra de linha) */
+/** Bloco com rótulo e parágrafo com respiro */
 function labeledBlock(doc, label, value, x, y, maxWidth) {
+  const labelGap = 12;
+  const lineGap = 14;
+
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 23, 42);
   doc.setFontSize(11);
   doc.text(label, x, y);
 
-  const lh = 5;
+  const baseY = y + labelGap;
+
   doc.setFont("helvetica", "normal");
   doc.setTextColor(31, 41, 55);
+  doc.setFontSize(11);
+
   const lines = splitText(doc, value, maxWidth);
   lines.forEach((ln, i) => {
-    doc.text(ln, x, y + 5 + i * lh);
+    doc.text(ln, x, baseY + i * lineGap);
   });
 
-  return y + 5 + lines.length * lh + 6; // y após o bloco
+  // espaço extra após o bloco
+  return baseY + lines.length * lineGap + 12;
 }
 
-/** lista com marcadores "-" */
+/** Lista de serviços com marcadores e mais espaçamento */
 function bulletList(doc, title, itens = [], x, y, maxWidth) {
+  // linha divisória suave antes da seção
+  doc.setDrawColor(229, 231, 235);
+  doc.line(x, y - 6, x + maxWidth, y - 6);
+
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 23, 42);
   doc.setFontSize(11);
   doc.text(title, x, y);
 
-  const lh = 5;
+  const lineGap = 14;
+  let yy = y + 10;
+
   doc.setFont("helvetica", "normal");
   doc.setTextColor(31, 41, 55);
-  let yy = y + 5;
+  doc.setFontSize(11);
 
-  itens.forEach((it) => {
+  const lista = itens && itens.length ? itens : ["-"];
+
+  lista.forEach((it) => {
     const lines = splitText(doc, `- ${it}`, maxWidth);
     lines.forEach((ln, i) => {
-      doc.text(ln, x, yy + i * lh);
+      doc.text(ln, x, yy + i * lineGap);
     });
-    yy += lines.length * lh + 2;
+    yy += lines.length * lineGap + 4; // espaço entre itens
   });
 
-  return yy + 4;
+  return yy + 10; // espaço após seção
 }
 
 export async function gerarPdfOrcamento({
-  numero,              // ex: "NH-2025-0007" (opcional)
-  data,                // ISO ou Date
-  cliente,             // nome
-  cnpj,                // opcional
-  contato,             // fone/email
-  endereco,            // string
-  servicos = [],       // array de strings (tópicos)
-  valor,               // string: "33.400,00"
-  condicoes,           // string
-  observacoes,         // string
-  logoSrc = "/Logotipo NewHydra.jpeg", // caminho da sua logo
+  numero,
+  data,
+  cliente,
+  cnpj,
+  contato,
+  endereco,
+  servicos = [],
+  valor,
+  condicoes,
+  observacoes,
+  logoSrc = "/Logotipo NewHydra.jpeg",
   empresa = "New Hydra",
 }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const margin = 32;
   let y = margin;
 
-  // logo -> dataURL
+  // logo
   let logo = null;
-  try { logo = await loadImageDataURL(logoSrc); } catch {}
+  try {
+    logo = await loadImageDataURL(logoSrc);
+  } catch {
+    logo = null;
+  }
 
   // cabeçalho
-  y = drawHeader(doc, { logoDataUrl: logo, empresa, titulo: "Orçamento de Serviços" }, 0, y - 8, pageW);
+  y = drawHeader(doc, { logoDataUrl: logo, empresa, titulo: "Orçamento de Serviços" }, pageW);
 
-  // faixa de meta (número/data)
+  // meta (número / data)
   const metaLeft = numero ? `Orçamento nº: ${numero}` : "";
   const metaRight = `Data: ${fmtDataISO(data)}`;
   doc.setFont("helvetica", "normal");
@@ -141,41 +155,49 @@ export async function gerarPdfOrcamento({
   doc.setFontSize(10);
   if (metaLeft) doc.text(metaLeft, margin, y);
   doc.text(metaRight, pageW - margin, y, { align: "right" });
-  y += 14;
+  y += 18;
 
-  // Cliente / CNPJ / contato / endereço
-  const wCol = (pageW - margin * 2);
+  const wCol = pageW - margin * 2;
+
+  // Cliente / CNPJ / contato / endereço (cada bloco bem separado)
   y = labeledBlock(doc, "Cliente:", cliente || "-", margin, y, wCol);
   if (cnpj) y = labeledBlock(doc, "CNPJ:", cnpj, margin, y, wCol);
   if (contato) y = labeledBlock(doc, "Contato:", contato, margin, y, wCol);
   if (endereco) y = labeledBlock(doc, "Endereço:", endereco, margin, y, wCol);
 
-  // Serviços
-  y = bulletList(doc, "Serviços orçados:", servicos && servicos.length ? servicos : ["-"], margin, y, wCol);
+  // Serviços (lista em tópicos)
+  y = bulletList(doc, "Serviços orçados:", servicos, margin, y, wCol);
 
-  // Valor total
+  // Valor total em box destacado
   if (valor) {
-    const boxH = 26;
-    doc.setDrawColor(229, 231, 235);
-    doc.setFillColor(247, 250, 255);
-    doc.roundedRect(margin, y, wCol, boxH, 6, 6, "FD");
+    const boxH = 30;
+    doc.setDrawColor(209, 213, 219);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y, wCol, boxH, 8, 8, "FD");
+
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(15, 23, 42);
     doc.setFontSize(11);
-    doc.text("Valor total:", margin + 10, y + 17);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Valor total:", margin + 12, y + 19);
+
     doc.setFont("helvetica", "normal");
-    doc.text(`R$ ${valor}`, margin + 90, y + 17);
-    y += boxH + 10;
+    doc.text(`R$ ${valor}`, margin + 110, y + 19);
+
+    y += boxH + 16;
   }
 
   // Condições de pagamento
-  if (condicoes) y = labeledBlock(doc, "Condições de pagamento:", condicoes, margin, y, wCol);
+  if (condicoes) {
+    y = labeledBlock(doc, "Condições de pagamento:", condicoes, margin, y, wCol);
+  }
 
   // Observações
-  if (observacoes) y = labeledBlock(doc, "Observações:", observacoes, margin, y, wCol);
+  if (observacoes) {
+    y = labeledBlock(doc, "Observações:", observacoes, margin, y, wCol);
+  }
 
-  // rodapé
-  const footerY = doc.internal.pageSize.getHeight() - margin + 6;
+  // rodapé fixo
+  const footerY = pageH - margin + 6;
   doc.setDrawColor(229, 231, 235);
   doc.line(margin, footerY - 18, pageW - margin, footerY - 18);
   doc.setFont("helvetica", "italic");
@@ -188,7 +210,6 @@ export async function gerarPdfOrcamento({
   return { blob, fileName };
 }
 
-/** Dispara download do Blob com nome */
 export function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -197,5 +218,5 @@ export function downloadBlob(blob, fileName) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(()=> URL.revokeObjectURL(url), 2000);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
