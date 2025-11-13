@@ -5,10 +5,10 @@ export default function Header({ screenTitle = "Início" }) {
     <header className="header">
       <div className="header-inner">
         <img
-          src="/Logotipo NewHydra.jpeg"
+          src="/Logo.png"
           alt="New Hydra"
           className="brand-logo"
-          onError={(e)=>{ e.currentTarget.src = "/Logotipo NewHydra.jpeg"; }}
+          onError={(e)=>{ e.currentTarget.src = "/Logo.png"; }}
         />
         <div>
           <div className="header-title">New Hydra</div>
