@@ -173,7 +173,7 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 
 /* Logo da empresa no lugar da sigla CHRIS */
 .brand-logo {
-  height: 42px;
+  height: 70px;
   width: auto;
   object-fit: contain;
   border-radius: 8px;
