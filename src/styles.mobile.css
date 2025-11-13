@@ -201,7 +201,7 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 /* Responsivo (reduz o logo no mobile) */
 @media (max-width: 600px) {
   .brand-logo {
-    height: 34px;
+    height: 60px;
   }
   .header-title {
     font-size: 16px;
