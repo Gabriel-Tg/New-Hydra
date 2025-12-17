@@ -26,6 +26,7 @@ export default function Financeiro(){
   const [from, setFrom] = useState(()=> toISO(startOfMonth(new Date())));
   const [to, setTo] = useState(()=> toISO(new Date()));
   const [showPicker, setShowPicker] = useState(false);
+  const [tab, setTab] = useState("rec");
 
   // PRESETS com Portal + posição fixa
   const [showPresets, setShowPresets] = useState(false);
@@ -134,31 +135,37 @@ export default function Financeiro(){
 
       {/* TABS */}
       <div className="row">
-        <button className="btn ripple" onClick={()=>window.dispatchEvent(new CustomEvent('app:setTab', {detail:'financeiro:rec'}))}>A Receber</button>
-        <button className="btn ripple" onClick={()=>window.dispatchEvent(new CustomEvent('app:setTab', {detail:'financeiro:pay'}))}>A Pagar</button>
-        <button className="btn ripple" onClick={()=>window.dispatchEvent(new CustomEvent('app:setTab', {detail:'financeiro:fluxo'}))}>Fluxo de Caixa</button>
+        <button className={`btn ripple ${tab==="rec"?"primary":""}`} onClick={()=>setTab("rec")}>A Receber</button>
+        <button className={`btn ripple ${tab==="pay"?"primary":""}`} onClick={()=>setTab("pay")}>A Pagar</button>
+        <button className={`btn ripple ${tab==="fluxo"?"primary":""}`} onClick={()=>setTab("fluxo")}>Fluxo de Caixa</button>
       </div>
 
       {/* Listas */}
-      <SectionReceber
-        rInRange={rInRange}
-        entradasPagas={entradasPagas}
-        markRecPaid={markRecPaid}
-      />
-      <SectionPagar
-        pInRange={pInRange}
-        saidasPagas={saidasPagas}
-        markPayPaid={markPayPaid}
-      />
-      <SectionFluxo
-        monthKey={monthKey}
-        opening={opening}
-        entradasPrev={entradasPrev}
-        saidasPrev={saidasPrev}
-        saldoPrevisto={saldoPrevisto}
-        saldoReal={saldoReal}
-        openOpening={()=>{ setOpeningInput(String(opening)); setOpenOpening(true); }}
-      />
+      {tab==="rec" && (
+        <SectionReceber
+          rInRange={rInRange}
+          entradasPagas={entradasPagas}
+          markRecPaid={markRecPaid}
+        />
+      )}
+      {tab==="pay" && (
+        <SectionPagar
+          pInRange={pInRange}
+          saidasPagas={saidasPagas}
+          markPayPaid={markPayPaid}
+        />
+      )}
+      {tab==="fluxo" && (
+        <SectionFluxo
+          monthKey={monthKey}
+          opening={opening}
+          entradasPrev={entradasPrev}
+          saidasPrev={saidasPrev}
+          saldoPrevisto={saldoPrevisto}
+          saldoReal={saldoReal}
+          openOpening={()=>{ setOpeningInput(String(opening)); setOpenOpening(true); }}
+        />
+      )}
 
       {/* Modal - período personalizado */}
       <Modal open={showPicker} onClose={()=>setShowPicker(false)} title="Período personalizado">
