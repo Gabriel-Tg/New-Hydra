@@ -112,8 +112,9 @@ export const useStore = create((set, get) => {
       save({ receivables });
       pushToast({ title:"Recebível adicionado" });
     },
-    markRecPaid: (id) => {
-      const receivables = get().receivables.map(r => r.id===id ? { ...r, status:"paid" } : r);
+    markRecPaid: (id, paid_at) => {
+      const paidAt = paid_at || Date.now();
+      const receivables = get().receivables.map(r => r.id===id ? { ...r, status:"paid", paid_at: paidAt } : r);
       save({ receivables });
       pushToast({ title:"Recebível marcado como pago" });
     },
@@ -133,8 +134,9 @@ export const useStore = create((set, get) => {
       save({ payables });
       pushToast({ title:"Conta a pagar adicionada" });
     },
-    markPayPaid: (id) => {
-      const payables = get().payables.map(p => p.id===id ? { ...p, status:"paid" } : p);
+    markPayPaid: (id, paid_at) => {
+      const paidAt = paid_at || Date.now();
+      const payables = get().payables.map(p => p.id===id ? { ...p, status:"paid", paid_at: paidAt } : p);
       save({ payables });
       pushToast({ title:"Pagamento efetuado" });
     },

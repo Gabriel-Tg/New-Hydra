@@ -24,9 +24,11 @@ export default function Financeiro(){
   const setOpening = useStore(s=>s.setCashOpening);
 
   const [from, setFrom] = useState(()=> toISO(startOfMonth(new Date())));
-  const [to, setTo] = useState(()=> toISO(new Date()));
+  const [to, setTo] = useState(()=> toISO(endOfMonth(new Date())));
   const [showPicker, setShowPicker] = useState(false);
   const [tab, setTab] = useState("rec");
+  const [confirmPay, setConfirmPay] = useState({ type:null, id:null });
+  const [paidDate, setPaidDate] = useState(()=> toISO(new Date()));
 
   // PRESETS com Portal + posição fixa
   const [showPresets, setShowPresets] = useState(false);
@@ -66,24 +68,33 @@ export default function Financeiro(){
     setShowPresets(false);
   };
 
+  const fromTs = useMemo(() => startOfDay(new Date(from)).getTime(), [from]);
+  const toTs = useMemo(() => endOfDay(new Date(to)).getTime(), [to]);
+
   const rInRange = useMemo(()=> (receivables||[])
-    .filter(r => r.due_date >= new Date(from).getTime() && r.due_date <= new Date(to).getTime())
-    .sort((a,b)=>a.due_date-b.due_date), [receivables, from, to]);
+    .filter(r => r.due_date >= fromTs && r.due_date <= toTs)
+    .sort((a,b)=>a.due_date-b.due_date), [receivables, fromTs, toTs]);
+
+  const rOpen = useMemo(()=> rInRange.filter(r=>r.status!=="paid"), [rInRange]);
+  const rPaid = useMemo(()=> rInRange.filter(r=>r.status==="paid"), [rInRange]);
 
   const pInRange = useMemo(()=> (payables||[])
-    .filter(r => r.due_date >= new Date(from).getTime() && r.due_date <= new Date(to).getTime())
-    .sort((a,b)=>a.due_date-b.due_date), [payables, from, to]);
+    .filter(r => r.due_date >= fromTs && r.due_date <= toTs)
+    .sort((a,b)=>a.due_date-b.due_date), [payables, fromTs, toTs]);
+
+  const pOpen = useMemo(()=> pInRange.filter(p=>p.status!=="paid"), [pInRange]);
+  const pPaid = useMemo(()=> pInRange.filter(p=>p.status==="paid"), [pInRange]);
 
   const sum = (arr, filter=()=>true) => arr.filter(filter).reduce((s,x)=> s + Number(x.amount||0), 0);
 
   const monthKey = ymKey(from);
   const opening = cashOpening[monthKey] || 0;
-  const entradasPrev = sum(rInRange);
-  const saidasPrev = sum(pInRange);
-  const saldoPrevisto = opening + entradasPrev - saidasPrev;
+  const entradasPrev = sum(rOpen);
+  const saidasPrev = sum(pOpen);
   const entradasPagas = sum(rInRange, x=>x.status==="paid");
   const saidasPagas = sum(pInRange, x=>x.status==="paid");
   const saldoReal = opening + entradasPagas - saidasPagas;
+  const saldoPrevisto = saldoReal + entradasPrev - saidasPrev;
 
   // Saldo inicial em modal
   const [openOpening, setOpenOpening] = useState(false);
@@ -143,16 +154,20 @@ export default function Financeiro(){
       {/* Listas */}
       {tab==="rec" && (
         <SectionReceber
-          rInRange={rInRange}
+          rOpen={rOpen}
+          rPaid={rPaid}
+          totalPrev={entradasPrev}
           entradasPagas={entradasPagas}
-          markRecPaid={markRecPaid}
+          onAskMark={(id)=>{ setConfirmPay({ type:"rec", id }); setPaidDate(toISO(new Date())); }}
         />
       )}
       {tab==="pay" && (
         <SectionPagar
           pInRange={pInRange}
+          pOpen={pOpen}
+          pPaid={pPaid}
           saidasPagas={saidasPagas}
-          markPayPaid={markPayPaid}
+          onAskMark={(id)=>{ setConfirmPay({ type:"pay", id }); setPaidDate(toISO(new Date())); }}
         />
       )}
       {tab==="fluxo" && (
@@ -162,10 +177,34 @@ export default function Financeiro(){
           entradasPrev={entradasPrev}
           saidasPrev={saidasPrev}
           saldoPrevisto={saldoPrevisto}
+          entradasPagas={entradasPagas}
+          saidasPagas={saidasPagas}
           saldoReal={saldoReal}
           openOpening={()=>{ setOpeningInput(String(opening)); setOpenOpening(true); }}
         />
       )}
+
+      {/* Modal - confirmar pagamento */}
+      <Modal open={!!confirmPay.id} onClose={()=>setConfirmPay({ type:null, id:null })} title="Confirmar pagamento">
+        <div className="stack">
+          <div className="muted">Informe a data em que o pagamento foi recebido/efetuado.</div>
+          <input className="input" type="date" value={paidDate} onChange={e=>setPaidDate(e.target.value)} />
+          <div style={{display:"flex", justifyContent:"flex-end", gap:8}}>
+            <button className="btn ripple" onClick={()=>setConfirmPay({ type:null, id:null })}>Cancelar</button>
+            <button
+              className="btn primary ripple"
+              onClick={()=>{
+                if (confirmPay.type && confirmPay.id){
+                  const ts = new Date(`${paidDate}T00:00:00`).getTime();
+                  if (confirmPay.type==="rec") markRecPaid(confirmPay.id, ts);
+                  if (confirmPay.type==="pay") markPayPaid(confirmPay.id, ts);
+                }
+                setConfirmPay({ type:null, id:null });
+              }}
+            >Confirmar</button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal - período personalizado */}
       <Modal open={showPicker} onClose={()=>setShowPicker(false)} title="Período personalizado">
@@ -216,33 +255,54 @@ export default function Financeiro(){
 }
 
 /* Sub-seções (separei para deixar mais limpo) */
-function SectionReceber({ rInRange, entradasPagas, markRecPaid }){
+function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
   const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount||0),0);
   return (
     <div className="card slide-up">
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
         <strong>A Receber</strong>
-        <div className="muted">Total: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum(rInRange))} • Pagos: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(entradasPagas)}</div>
+        <div className="muted">Previsto: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(totalPrev)} • Recebidos: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(entradasPagas)}</div>
       </div>
-      <div className="table-card">
-        {rInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
-        {rInRange.map((r)=>(
-          <div key={r.id} className="table-row fade-in">
-            <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
-            <div style={{flex:1}}>{r.customer}</div>
-            <div className="muted" style={{minWidth:90}}>{r.method}</div>
-            <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(r.amount)}</strong></div>
-            <button className="btn ripple" onClick={()=>markRecPaid(r.id)} disabled={r.status==="paid"}>
-              {r.status==="paid" ? "Pago" : "Marcar pago"}
-            </button>
+      <div className="stack" style={{gap:16}}>
+        <div>
+          <div className="muted" style={{fontSize:12, marginBottom:4}}>Em aberto</div>
+          <div className="table-card">
+            {rOpen.length===0 && <div className="muted">Sem lançamentos em aberto.</div>}
+            {rOpen.map((r)=>(
+              <div key={r.id} className="table-row fade-in">
+                <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{flex:1}}>{r.customer}</div>
+                <div className="muted" style={{minWidth:90}}>{r.method}</div>
+                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(r.amount)}</strong></div>
+                <button className="btn ripple" onClick={()=>onAskMark(r.id)}>
+                  Marcar pago
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        <div>
+          <div className="muted" style={{fontSize:12, marginBottom:4}}>Recebidos</div>
+          <div className="table-card">
+            {rPaid.length===0 && <div className="muted">Nenhum recebido no período.</div>}
+            {rPaid.map((r)=>(
+              <div key={r.id} className="table-row fade-in">
+                <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{flex:1}}>{r.customer}</div>
+                <div className="muted" style={{minWidth:90}}>{r.method}</div>
+                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(r.amount)}</strong></div>
+                <div className="muted" style={{minWidth:120}}>Recebido</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function SectionPagar({ pInRange, saidasPagas, markPayPaid }){
+function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
   const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount||0),0);
   return (
     <div className="card slide-up">
@@ -250,25 +310,46 @@ function SectionPagar({ pInRange, saidasPagas, markPayPaid }){
         <strong>A Pagar</strong>
         <div className="muted">Total: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum(pInRange))} • Pagos: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(saidasPagas)}</div>
       </div>
-      <div className="table-card">
-        {pInRange.length===0 && <div className="muted">Sem lançamentos.</div>}
-        {pInRange.map((p)=>(
-          <div key={p.id} className="table-row fade-in">
-            <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
-            <div style={{flex:1}}>{p.description}</div>
-            <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
-            <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.amount)}</strong></div>
-            <button className="btn ripple" onClick={()=>markPayPaid(p.id)} disabled={p.status==="paid"}>
-              {p.status==="paid" ? "Pago" : "Pagar"}
-            </button>
+      <div className="stack" style={{gap:16}}>
+        <div>
+          <div className="muted" style={{fontSize:12, marginBottom:4}}>Em aberto</div>
+          <div className="table-card">
+            {pOpen.length===0 && <div className="muted">Sem lançamentos em aberto.</div>}
+            {pOpen.map((p)=>(
+              <div key={p.id} className="table-row fade-in">
+                <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{flex:1}}>{p.description}</div>
+                <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
+                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.amount)}</strong></div>
+                <button className="btn ripple" onClick={()=>onAskMark(p.id)}>
+                  Pagar
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        <div>
+          <div className="muted" style={{fontSize:12, marginBottom:4}}>Pagos</div>
+          <div className="table-card">
+            {pPaid.length===0 && <div className="muted">Nenhum pago no período.</div>}
+            {pPaid.map((p)=>(
+              <div key={p.id} className="table-row fade-in">
+                <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{flex:1}}>{p.description}</div>
+                <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
+                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.amount)}</strong></div>
+                <div className="muted" style={{minWidth:120}}>Pago</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function SectionFluxo({ monthKey, opening, entradasPrev, saidasPrev, saldoPrevisto, saldoReal, openOpening }){
+function SectionFluxo({ monthKey, opening, entradasPrev, saidasPrev, saldoPrevisto, entradasPagas, saidasPagas, saldoReal, openOpening }){
   const fmt = (v)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
   return (
     <div className="card slide-up">
@@ -279,11 +360,19 @@ function SectionFluxo({ monthKey, opening, entradasPrev, saidasPrev, saldoPrevis
           <strong>{fmt(opening)}</strong>
         </button>
       </div>
-      <div className="row">
-        <div className="kpi fade-in"><div className="label">Entradas (previsto)</div><div className="value">{fmt(entradasPrev)}</div></div>
-        <div className="kpi fade-in"><div className="label">Saídas (previsto)</div><div className="value">{fmt(saidasPrev)}</div></div>
-        <div className="kpi fade-in"><div className="label">Saldo previsto</div><div className="value">{fmt(saldoPrevisto)}</div></div>
-        <div className="kpi fade-in"><div className="label">Saldo real</div><div className="value">{fmt(saldoReal)}</div></div>
+      <div className="stack" style={{gap:12}}>
+        <div className="muted" style={{fontSize:12}}>Fluxo de Caixa (previsão)</div>
+        <div className="row">
+          <div className="kpi fade-in"><div className="label">Entradas previstas</div><div className="value">{fmt(entradasPrev)}</div></div>
+          <div className="kpi fade-in"><div className="label">Saídas previstas</div><div className="value">{fmt(saidasPrev)}</div></div>
+          <div className="kpi fade-in"><div className="label">Saldo previsto</div><div className="value">{fmt(saldoPrevisto)}</div></div>
+        </div>
+        <div className="muted" style={{fontSize:12}}>Fluxo de Caixa (real)</div>
+        <div className="row">
+          <div className="kpi fade-in"><div className="label">Entradas recebidas</div><div className="value">{fmt(entradasPagas)}</div></div>
+          <div className="kpi fade-in"><div className="label">Saídas realizadas</div><div className="value">{fmt(saidasPagas)}</div></div>
+          <div className="kpi fade-in"><div className="label">Saldo real</div><div className="value">{fmt(saldoReal)}</div></div>
+        </div>
       </div>
     </div>
   );

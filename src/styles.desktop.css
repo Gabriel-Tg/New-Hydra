@@ -8,7 +8,7 @@
   .table{ display:table; width:100%; border-collapse:collapse; }
   .table th,.table td{ border-top:1px solid var(--border); padding:10px; text-align:left; }
   .table thead th{ background:#F8FAFC; color:#64748B; border-top:none; }
-  .table-card{ display:none; }
+  .table-card{ display:grid; gap:12px; }
 
   .tabbar{ max-width:960px; margin:0 auto; }
   .modal-panel{ inset:auto 24px 120px 24px; max-width:820px; }

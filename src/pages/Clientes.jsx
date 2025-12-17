@@ -7,7 +7,6 @@ export default function Clientes(){
   const clients = useStore(s=>s.clients);
   const appts = useStore(s=>s.appts);
   const recs = useStore(s=>s.receivables);
-  const pays = useStore(s=>s.payables);
 
   const [q, setQ] = useState("");
   const [openHist, setOpenHist] = useState(null);
@@ -20,9 +19,23 @@ export default function Clientes(){
 
   const historyFor = (cid) => {
     const A = appts.filter(a=>a.client_id===cid).map(a=>({ type:"appt", at:a.start_at, title:`Agendamento: ${a.service}`, sub:`${fmtDate(a.start_at)} ${fmtTime(a.start_at)}–${fmtTime(a.end_at)} ${a.location||""}` }));
-    const R = recs.filter(r=>r.client_id===cid).map(r=>({ type:"rec", at:new Date(r.due_date).getTime(), title:`Recebível: R$ ${Number(r.amount).toFixed(2)} (${r.status})`, sub:`Venc.: ${new Date(r.due_date).toLocaleDateString("pt-BR")} • ${r.method}` }));
-    const P = pays.map(p=>({ type:"pay", at:new Date(p.due_date).getTime(), title:`Pagamento: R$ ${Number(p.amount).toFixed(2)} (${p.status})`, sub:`${p.description} • Venc.: ${new Date(p.due_date).toLocaleDateString("pt-BR")}` }));
-    return [...A, ...R, ...P].sort((a,b)=>b.at-a.at);
+    const R = recs.filter(r=>r.client_id===cid).map(r=>{
+      const paidDate = r.paid_at ? new Date(r.paid_at) : null;
+      const dueDate = new Date(r.due_date);
+      const displayDate = paidDate || dueDate;
+      const paidLate = paidDate ? paidDate.getTime() > dueDate.getTime() : false;
+      return {
+        type:"rec",
+        at: displayDate.getTime(),
+        title:`Valor: R$ ${Number(r.amount).toFixed(2)}`,
+        venc: `Vencimento: ${dueDate.toLocaleDateString("pt-BR")}`,
+        receb: paidDate
+          ? `Recebido em: ${paidDate.toLocaleDateString("pt-BR")} • Forma: ${r.method||"–"}`
+          : `Forma: ${r.method||"–"}`,
+        recebLate: paidLate,
+      };
+    });
+    return [...A, ...R].sort((a,b)=>b.at-a.at);
   };
 
   const selected = clients.find(c=>c.id===openHist);
@@ -59,7 +72,15 @@ export default function Clientes(){
           {selected && historyFor(selected.id).map((h,idx)=>(
             <div key={idx} className="fade-in" style={{borderTop: idx? '1px solid var(--border)':'none', paddingTop: idx?8:0}}>
               <div><strong>{h.title}</strong></div>
-              <div className="muted" style={{fontSize:12}}>{new Date(h.at).toLocaleString("pt-BR")} • {h.sub}</div>
+              {h.type==="rec" && (
+                <div className="muted" style={{fontSize:12}}>
+                  <div>{h.venc}</div>
+                  <div style={{color: h.recebLate ? "#b91c1c" : "inherit"}}>{h.receb}</div>
+                </div>
+              )}
+              {h.type==="appt" && (
+                <div className="muted" style={{fontSize:12}}>{h.sub}</div>
+              )}
             </div>
           ))}
         </div>
