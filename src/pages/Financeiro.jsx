@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useStore } from "../lib/store.jsx";
 import Modal from "../components/Modal.jsx";
 import Portal from "../components/Portal.jsx";
-import { formatBRL, parseBRL } from "../lib/money.js";
+import { formatCents, parseToCents } from "../lib/money.js";
 
 /* helpers de período */
 const toISO = (d) => new Date(d).toISOString().slice(0,10);
@@ -85,7 +85,7 @@ export default function Financeiro(){
   const pOpen = useMemo(()=> pInRange.filter(p=>p.status!=="paid"), [pInRange]);
   const pPaid = useMemo(()=> pInRange.filter(p=>p.status==="paid"), [pInRange]);
 
-  const sum = (arr, filter=()=>true) => arr.filter(filter).reduce((s,x)=> s + Number(x.amount||0), 0);
+  const sum = (arr, filter=()=>true) => arr.filter(filter).reduce((s,x)=> s + Number(x.amount_cents||0), 0);
 
   const monthKey = ymKey(from);
   const opening = cashOpening[monthKey] || 0;
@@ -99,6 +99,10 @@ export default function Financeiro(){
   // Saldo inicial em modal
   const [openOpening, setOpenOpening] = useState(false);
   const [openingInput, setOpeningInput] = useState(() => String(opening));
+  const openingPreview = (() => {
+    try { return formatCents(parseToCents(openingInput)); }
+    catch { return "Valor inválido"; }
+  })();
 
   return (
     <div className="stack fade-in">
@@ -235,13 +239,13 @@ export default function Financeiro(){
             placeholder="Ex.: 1500,00"
           />
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-            <div className="muted">Prévia: <strong>{formatBRL(parseBRL(openingInput))}</strong></div>
+            <div className="muted">Prévia: <strong>{openingPreview}</strong></div>
             <div style={{display:"flex", gap:8}}>
               <button className="btn ripple" onClick={()=>setOpenOpening(false)}>Cancelar</button>
               <button
                 className="btn primary ripple"
                 onClick={()=>{
-                  const val = parseBRL(openingInput);
+                  const val = parseToCents(openingInput);
                   useStore.getState().setCashOpening(monthKey, val);
                   setOpenOpening(false);
                 }}
@@ -256,12 +260,12 @@ export default function Financeiro(){
 
 /* Sub-seções (separei para deixar mais limpo) */
 function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
-  const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount||0),0);
+  const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount_cents||0),0);
   return (
     <div className="card slide-up">
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
         <strong>A Receber</strong>
-        <div className="muted">Previsto: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(totalPrev)} • Recebidos: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(entradasPagas)}</div>
+          <div className="muted">Previsto: {formatCents(totalPrev)} • Recebidos: {formatCents(entradasPagas)}</div>
       </div>
       <div className="stack" style={{gap:16}}>
         <div>
@@ -273,7 +277,7 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
                 <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
                 <div style={{flex:1}}>{r.customer}</div>
                 <div className="muted" style={{minWidth:90}}>{r.method}</div>
-                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(r.amount)}</strong></div>
+                <div style={{minWidth:130}}><strong>{formatCents(r.amount_cents)}</strong></div>
                 <button className="btn ripple" onClick={()=>onAskMark(r.id)}>
                   Marcar pago
                 </button>
@@ -291,7 +295,7 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
                 <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
                 <div style={{flex:1}}>{r.customer}</div>
                 <div className="muted" style={{minWidth:90}}>{r.method}</div>
-                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(r.amount)}</strong></div>
+                <div style={{minWidth:130}}><strong>{formatCents(r.amount_cents)}</strong></div>
                 <div className="muted" style={{minWidth:120}}>Recebido</div>
               </div>
             ))}
@@ -303,12 +307,12 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
 }
 
 function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
-  const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount||0),0);
+  const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount_cents||0),0);
   return (
     <div className="card slide-up">
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
         <strong>A Pagar</strong>
-        <div className="muted">Total: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(sum(pInRange))} • Pagos: {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(saidasPagas)}</div>
+        <div className="muted">Total: {formatCents(sum(pInRange))} • Pagos: {formatCents(saidasPagas)}</div>
       </div>
       <div className="stack" style={{gap:16}}>
         <div>
@@ -320,7 +324,7 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
                 <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
                 <div style={{flex:1}}>{p.description}</div>
                 <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
-                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.amount)}</strong></div>
+                <div style={{minWidth:130}}><strong>{formatCents(p.amount_cents)}</strong></div>
                 <button className="btn ripple" onClick={()=>onAskMark(p.id)}>
                   Pagar
                 </button>
@@ -338,7 +342,7 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
                 <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
                 <div style={{flex:1}}>{p.description}</div>
                 <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
-                <div style={{minWidth:130}}><strong>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(p.amount)}</strong></div>
+                <div style={{minWidth:130}}><strong>{formatCents(p.amount_cents)}</strong></div>
                 <div className="muted" style={{minWidth:120}}>Pago</div>
               </div>
             ))}
@@ -350,7 +354,7 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
 }
 
 function SectionFluxo({ monthKey, opening, entradasPrev, saidasPrev, saldoPrevisto, entradasPagas, saidasPagas, saldoReal, openOpening }){
-  const fmt = (v)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+  const fmt = (v)=>formatCents(v);
   return (
     <div className="card slide-up">
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:8}}>

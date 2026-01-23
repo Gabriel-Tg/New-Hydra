@@ -1,16 +1,27 @@
-export function formatBRL(v){
-  const n = Number(v||0);
+import Decimal from "decimal.js";
+
+// Converte entrada livre (string/number) para centavos inteiros.
+export function parseToCents(input){
+  if (input === null || input === undefined) throw new Error("Valor obrigatório");
+  const cleaned = String(input).replace(/\s/g, "").replace(/[R$\u00A0]/g, "").replace(/\./g, "").replace(",", ".");
+  const dec = new Decimal(cleaned || "0");
+  if (!dec.isFinite()) throw new Error("Valor inválido");
+  if (dec.isNeg()) throw new Error("Valor não pode ser negativo");
+  return dec.mul(100).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
+}
+
+// Formata centavos inteiros para BRL.
+export function formatCents(cents){
+  const n = Number.isFinite(cents) ? cents : 0;
+  const asNumber = n / 100;
   try{
-    return n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+    return asNumber.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
   }catch{
-    return `R$ ${n.toFixed(2)}`;
+    return `R$ ${asNumber.toFixed(2)}`;
   }
 }
 
-export function parseBRL(s){
-  if (typeof s === "number") return s;
-  if (!s) return 0;
-  const cleaned = String(s).replace(/\s/g,"").replace(/[R$\u00A0]/g,"").replace(/\./g,"").replace(",",".");
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : 0;
+// Soma segura de centavos.
+export function sumCents(arr){
+  return (arr||[]).reduce((acc, v)=> acc + (Number.isFinite(v)? v : 0), 0);
 }

@@ -27,7 +27,7 @@ export default function Clientes(){
       return {
         type:"rec",
         at: displayDate.getTime(),
-        title:`Valor: R$ ${Number(r.amount).toFixed(2)}`,
+        title:`Valor: ${(Number(r.amount_cents||0)/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}`,
         venc: `Vencimento: ${dueDate.toLocaleDateString("pt-BR")}`,
         receb: paidDate
           ? `Recebido em: ${paidDate.toLocaleDateString("pt-BR")} • Forma: ${r.method||"–"}`

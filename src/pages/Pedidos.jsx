@@ -16,10 +16,10 @@ function montarMensagem({ cliente, itens, observacoes }) {
   return linhas.join("\n");
 }
 
-// persistência simples
+// Persistência em sessão (dados não ficam no localStorage permanente)
 const KEY = "pedidos_v1";
-function loadPedidos(){ try{ return JSON.parse(localStorage.getItem(KEY) || "[]"); }catch{ return []; } }
-function savePedidos(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
+function loadPedidos(){ try{ return JSON.parse(sessionStorage.getItem(KEY) || "[]"); }catch{ return []; } }
+function savePedidos(arr){ sessionStorage.setItem(KEY, JSON.stringify(arr)); }
 
 export default function Pedidos(){
   // registro histórico
@@ -32,6 +32,8 @@ export default function Pedidos(){
   const [observacoes, setObservacoes] = useState("");
   const [itensPedido, setItensPedido] = useState([]);
   const [waPhone, setWaPhone] = useState("");
+  const [manualDesc, setManualDesc] = useState("");
+  const [manualQtd, setManualQtd] = useState("");
 
   // busca dinâmica — lista aparece SOMENTE quando há busca
   const [busca, setBusca] = useState("");
@@ -80,12 +82,14 @@ export default function Pedidos(){
   }
 
   function cadastrarManual(){
-    const desc = prompt("Descrição do item:");
-    if (!desc) return;
-    const qtd = Number(prompt("Quantidade:"));
-    if (!qtd || qtd<=0) return;
+    const desc = manualDesc.trim();
+    const qtd = Number(manualQtd);
+    if (!desc){ alert("Informe a descrição do item."); return; }
+    if (!qtd || qtd<=0){ alert("Quantidade inválida."); return; }
     const id = "man-" + desc.toLowerCase().replace(/\s+/g,"-").slice(0,48);
     addItemAoPedido({id, desc, qtd});
+    setManualDesc("");
+    setManualQtd("");
   }
 
   function finalizarEnviar(){
@@ -192,8 +196,10 @@ export default function Pedidos(){
                 ))}
 
                 {/* cadastrar manual direto daqui */}
-                <div className="row" style={{alignItems:"center", justifyContent:"space-between", borderTop:"1px solid var(--border)", paddingTop:8}}>
-                  <div className="muted" style={{flex:1, paddingRight:8}}>Não encontrou? Cadastre manualmente.</div>
+                <div className="row" style={{alignItems:"center", justifyContent:"space-between", borderTop:"1px solid var(--border)", paddingTop:8, flexWrap:"wrap", gap:8}}>
+                  <div className="muted" style={{flex:1, minWidth:160}}>Não encontrou? Cadastre manualmente.</div>
+                  <input className="input" placeholder="Descrição" value={manualDesc} onChange={e=>setManualDesc(e.target.value)} style={{flex:2, minWidth:200}} />
+                  <input className="input" placeholder="Qtd" inputMode="numeric" value={manualQtd} onChange={e=>setManualQtd(e.target.value)} style={{width:80}} />
                   <button className="btn ripple" onClick={cadastrarManual}>Cadastrar item</button>
                 </div>
               </div>

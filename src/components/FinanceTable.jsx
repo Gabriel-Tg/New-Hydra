@@ -1,5 +1,6 @@
 import React from "react";
 import { fmtDate } from "../lib/date.jsx";
+import { formatCents } from "../lib/money.js";
 
 export default function FinanceTable({ rows, type, onMark }) {
   return (
@@ -19,7 +20,7 @@ export default function FinanceTable({ rows, type, onMark }) {
             <tr key={r.id}>
               <td>{r.customer || r.description}</td>
               <td>{fmtDate(r.due_date)}</td>
-              <td style={{ textAlign: "right" }}>R$ {r.amount.toFixed(2)}</td>
+              <td style={{ textAlign: "right" }}>{formatCents(r.amount_cents)}</td>
               <td><span className={`badge ${r.status}`}>{r.status}</span></td>
               <td style={{ textAlign: "right" }}>
                 {r.status !== "paid" && (

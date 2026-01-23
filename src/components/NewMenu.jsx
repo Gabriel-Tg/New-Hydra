@@ -43,13 +43,18 @@ function NewAppointment({ open, onClose }){
   const submit = (e) => {
     e.preventDefault();
     setSaving(true);
-    const endTime = addMinutes(new Date(`${date}T${start}:00`), Number(duration));
-    add({
-      client_name: clientName, service, date, start,
-      end: `${String(endTime.getHours()).padStart(2,"0")}:${String(endTime.getMinutes()).padStart(2,"0")}`,
-      location, notes
-    });
-    setTimeout(()=>{ setSaving(false); onClose(); }, 200); // micro delay p/ animação
+    try {
+      const endTime = addMinutes(new Date(`${date}T${start}:00`), Number(duration));
+      add({
+        client_name: clientName, service, date, start,
+        end: `${String(endTime.getHours()).padStart(2,"0")}:${String(endTime.getMinutes()).padStart(2,"0")}`,
+        location, notes
+      });
+      setTimeout(()=>{ setSaving(false); onClose(); }, 200);
+    } catch (err) {
+      setSaving(false);
+      useStore.getState().pushToast({ type:"error", title:"Erro ao salvar", desc: err.message });
+    }
   };
 
   return (
@@ -84,8 +89,13 @@ function NewReceivable({ open, onClose }){
   const submit = (e) => {
     e.preventDefault();
     setSaving(true);
-    add({ customer, due_date: due, amount, method });
-    setTimeout(()=>{ setSaving(false); onClose(); }, 200);
+    try {
+      add({ customer, due_date: due, amount, method });
+      setTimeout(()=>{ setSaving(false); onClose(); }, 200);
+    } catch (err) {
+      setSaving(false);
+      useStore.getState().pushToast({ type:"error", title:"Erro ao salvar", desc: err.message });
+    }
   };
 
   return (
@@ -122,8 +132,13 @@ function NewPayable({ open, onClose }){
   const submit = (e) => {
     e.preventDefault();
     setSaving(true);
-    add({ description, due_date: due, amount, category });
-    setTimeout(()=>{ setSaving(false); onClose(); }, 200);
+    try {
+      add({ description, due_date: due, amount, category });
+      setTimeout(()=>{ setSaving(false); onClose(); }, 200);
+    } catch (err) {
+      setSaving(false);
+      useStore.getState().pushToast({ type:"error", title:"Erro ao salvar", desc: err.message });
+    }
   };
 
   return (

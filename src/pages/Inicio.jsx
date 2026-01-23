@@ -27,7 +27,7 @@ export default function Inicio(){
   const payRange = useMemo(()=> (payables||[])
     .filter(p => p.due_date >= d0.getTime() && p.due_date <= d1.getTime() && p.status!=="paid"), [payables, scope]);
 
-  const sum = (arr) => arr.reduce((s,x)=> s + Number(x.amount||0), 0);
+  const sum = (arr) => arr.reduce((s,x)=> s + Number(x.amount_cents||0), 0);
 
   return (
     <div className="stack">
@@ -53,15 +53,15 @@ export default function Inicio(){
         </div>
         <div className="kpi slide-up">
           <div className="label">A receber ({recRange.length})</div>
-          <div className="value">R$ {sum(recRange).toFixed(2)}</div>
+          <div className="value">{(sum(recRange)/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</div>
         </div>
         <div className="kpi slide-up">
           <div className="label">A pagar ({payRange.length})</div>
-          <div className="value">R$ {sum(payRange).toFixed(2)}</div>
+          <div className="value">{(sum(payRange)/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</div>
         </div>
         <div className="kpi slide-up">
           <div className="label">Saldo previsto</div>
-          <div className="value">R$ {(sum(recRange)-sum(payRange)).toFixed(2)}</div>
+          <div className="value">{((sum(recRange)-sum(payRange))/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</div>
         </div>
       </div>
 

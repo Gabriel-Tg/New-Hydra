@@ -1,10 +1,8 @@
 // public/sw.js
-const CACHE = "prestador-v1";
+const CACHE = "nh-assets-v2";
 const CORE = [
-  "/",
-  "/index.html",
   "/manifest.webmanifest"
-  // Vite vai gerar assets em /assets/*.js e *.css – eles entram via runtime cache abaixo
+  // Assets gerados em /assets/*.js e *.css serão armazenados via runtime cache
 ];
 
 self.addEventListener("install", (e) => {
@@ -20,33 +18,22 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-// Estratégia: network-first com fallback a cache para navegação e assets.
-// Para requisições ao Supabase (API), se offline: deixamos falhar no fetch
-// e tratamos no app (fila offline) – ver Dexie abaixo.
+// Estratégia: cache-first apenas para assets estáticos; navegação/autenticado vai direto à rede (evita servir HTML antigo com dados sensíveis).
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   const isGET = e.request.method === "GET";
-  const isAPI =
-    url.hostname.endsWith("supabase.co") || url.pathname.startsWith("/api/");
-
-  if (isGET && !isAPI) {
+  const isAsset = url.pathname.startsWith("/assets/") || url.pathname.endsWith(".css") || url.pathname.endsWith(".js") || url.pathname.endsWith(".png") || url.pathname.endsWith(".jpg") || url.pathname.endsWith(".webmanifest");
+  if (!isGET) return;
+  if (isAsset) {
     e.respondWith(
-      (async () => {
-        try {
-          const net = await fetch(e.request);
-          const cache = await caches.open(CACHE);
-          cache.put(e.request, net.clone());
-          return net;
-        } catch {
-          const cached = await caches.match(e.request);
-          if (cached) return cached;
-          // fallback básico para navegação SPA
-          if (e.request.mode === "navigate") {
-            return caches.match("/index.html");
-          }
-          throw new Error("Offline e sem cache.");
-        }
-      })()
+      caches.open(CACHE).then(async (cache) => {
+        const cached = await cache.match(e.request);
+        if (cached) return cached;
+        const net = await fetch(e.request);
+        cache.put(e.request, net.clone());
+        return net;
+      })
     );
   }
+  // demais requisições (HTML/API) passam direto (network-only)
 });

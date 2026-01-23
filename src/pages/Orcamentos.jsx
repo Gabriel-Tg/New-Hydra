@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { gerarPdfOrcamento, downloadBlob } from "../lib/pdfOrcamento.js";
 
-// Persistência local simples
+// Persistência apenas em sessão (evita deixar dados sensíveis em localStorage durável)
 const KEY = "orcamentos_v1";
-const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; } };
-const save = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
+const load = () => { try { return JSON.parse(sessionStorage.getItem(KEY) || "[]"); } catch { return []; } };
+const save = (arr) => sessionStorage.setItem(KEY, JSON.stringify(arr));
 
 function mensagemWhatsAppResumo({ cliente, valor }) {
   const linhas = [];
