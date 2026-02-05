@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE = "nh-assets-v2";
+const CACHE = "nh-assets-v3";
 const CORE = [
   "/manifest.webmanifest"
   // Assets gerados em /assets/*.js e *.css serão armazenados via runtime cache

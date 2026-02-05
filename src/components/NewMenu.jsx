@@ -40,12 +40,12 @@ function NewAppointment({ open, onClose }){
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       const endTime = addMinutes(new Date(`${date}T${start}:00`), Number(duration));
-      add({
+      await add({
         client_name: clientName, service, date, start,
         end: `${String(endTime.getHours()).padStart(2,"0")}:${String(endTime.getMinutes()).padStart(2,"0")}`,
         location, notes
@@ -86,11 +86,11 @@ function NewReceivable({ open, onClose }){
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("pix");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      add({ customer, due_date: due, amount, method });
+      await add({ customer, due_date: due, amount, method });
       setTimeout(()=>{ setSaving(false); onClose(); }, 200);
     } catch (err) {
       setSaving(false);
@@ -129,11 +129,11 @@ function NewPayable({ open, onClose }){
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Geral");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      add({ description, due_date: due, amount, category });
+      await add({ description, due_date: due, amount, category });
       setTimeout(()=>{ setSaving(false); onClose(); }, 200);
     } catch (err) {
       setSaving(false);

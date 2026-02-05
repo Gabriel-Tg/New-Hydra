@@ -38,12 +38,19 @@ const Icon = {
       <path d="M9 13h6M9 17h6M9 9h3" stroke="currentColor" strokeWidth="1.6"/>
     </svg>
   ),
+  lancamentos: (a)=>(
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M4 7h16M4 12h10M4 17h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+      <circle cx="18" cy="12" r="2.2" stroke="currentColor" strokeWidth="1.6"/>
+    </svg>
+  ),
 };
 
 const tabs = [
   { key:"inicio", icon:Icon.inicio },
   { key:"agenda", icon:Icon.agenda },
   { key:"financeiro", icon:Icon.financeiro },
+  { key:"lancamentos", icon:Icon.lancamentos },
   { key:"clientes", icon:Icon.clientes },
   { key:"pedidos", icon:Icon.pedidos },
   { key:"orcamentos", icon:Icon.orcamentos },

@@ -3,12 +3,25 @@ import { useStore } from "../lib/store.jsx";
 import Modal from "../components/Modal.jsx";
 import Portal from "../components/Portal.jsx";
 import { formatCents, parseToCents } from "../lib/money.js";
+import { gerarPdfRelatorioSemanal } from "../lib/pdfRelatorioSemanal.js";
+import { downloadBlob } from "../lib/pdfOrcamento.js";
 
 /* helpers de período */
-const toISO = (d) => new Date(d).toISOString().slice(0,10);
+const toISO = (d) => {
+  const x = new Date(d);
+  x.setMinutes(x.getMinutes() - x.getTimezoneOffset());
+  return x.toISOString().slice(0, 10);
+};
+const fmtISO = (iso) => String(iso).split("-").reverse().join("/");
+const paidTs = (item) => item.paid_at || item.due_date;
+const normalizeSundayISO = (iso) => {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return toISO(startOfWeek(new Date()));
+  return toISO(startOfWeek(d));
+};
 function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
 function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); return x; }
-function startOfWeek(d){ const x=new Date(d); const dow=(x.getDay()+6)%7; x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x; }
+function startOfWeek(d){ const x=new Date(d); const dow=x.getDay(); x.setDate(x.getDate()-dow); x.setHours(0,0,0,0); return x; }
 function endOfWeek(d){ const x=startOfWeek(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
 function startOfMonth(d){ const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
 function endOfMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()+1); x.setDate(0); x.setHours(23,59,59,999); return x; }
@@ -23,7 +36,6 @@ export default function Financeiro(){
   const removeRec = useStore(s=>s.removeReceivable);
   const removePay = useStore(s=>s.removePayable);
   const cashOpening = useStore(s=>s.cashOpening);
-  const setOpening = useStore(s=>s.setCashOpening);
 
   const [from, setFrom] = useState(()=> toISO(startOfMonth(new Date())));
   const [to, setTo] = useState(()=> toISO(endOfMonth(new Date())));
@@ -31,6 +43,8 @@ export default function Financeiro(){
   const [tab, setTab] = useState("rec");
   const [confirmPay, setConfirmPay] = useState({ type:null, id:null });
   const [paidDate, setPaidDate] = useState(()=> toISO(new Date()));
+  const [showWeeklyReport, setShowWeeklyReport] = useState(false);
+  const [weekStartISO, setWeekStartISO] = useState(()=> toISO(startOfWeek(new Date())));
 
   // PRESETS com Portal + posição fixa
   const [showPresets, setShowPresets] = useState(false);
@@ -70,8 +84,8 @@ export default function Financeiro(){
     setShowPresets(false);
   };
 
-  const fromTs = useMemo(() => startOfDay(new Date(from)).getTime(), [from]);
-  const toTs = useMemo(() => endOfDay(new Date(to)).getTime(), [to]);
+  const fromTs = useMemo(() => startOfDay(new Date(`${from}T00:00:00`)).getTime(), [from]);
+  const toTs = useMemo(() => endOfDay(new Date(`${to}T00:00:00`)).getTime(), [to]);
 
   const rInRange = useMemo(()=> (receivables||[])
     .filter(r => r.due_date >= fromTs && r.due_date <= toTs)
@@ -97,6 +111,67 @@ export default function Financeiro(){
   const saidasPagas = sum(pInRange, x=>x.status==="paid");
   const saldoReal = opening + entradasPagas - saidasPagas;
   const saldoPrevisto = saldoReal + entradasPrev - saidasPrev;
+
+  const weekRange = useMemo(() => {
+    const ws = startOfWeek(new Date(`${weekStartISO}T00:00:00`));
+    const we = endOfWeek(ws);
+    return {
+      ws,
+      we,
+      wsTs: ws.getTime(),
+      weTs: we.getTime(),
+      wsISO: toISO(ws),
+      weISO: toISO(we),
+    };
+  }, [weekStartISO]);
+
+  const entradasSemana = useMemo(() => (receivables || [])
+    .filter(r => r.status === "paid")
+    .map(r => ({ ...r, _ts: paidTs(r) }))
+    .filter(r => r._ts >= weekRange.wsTs && r._ts <= weekRange.weTs)
+    .sort((a, b) => a._ts - b._ts), [receivables, weekRange]);
+
+  const saidasSemana = useMemo(() => (payables || [])
+    .filter(p => p.status === "paid")
+    .map(p => ({ ...p, _ts: paidTs(p) }))
+    .filter(p => p._ts >= weekRange.wsTs && p._ts <= weekRange.weTs)
+    .sort((a, b) => a._ts - b._ts), [payables, weekRange]);
+
+  const weekMonthKey = ymKey(weekRange.wsISO);
+  const saldoInicialSemana = useMemo(() => {
+    const openingMonth = cashOpening[weekMonthKey] || 0;
+    const monthStartTs = startOfMonth(weekRange.ws).getTime();
+    const recBefore = sum(receivables || [], r => r.status === "paid" && paidTs(r) >= monthStartTs && paidTs(r) < weekRange.wsTs);
+    const payBefore = sum(payables || [], p => p.status === "paid" && paidTs(p) >= monthStartTs && paidTs(p) < weekRange.wsTs);
+    return openingMonth + recBefore - payBefore;
+  }, [cashOpening, weekMonthKey, receivables, payables, weekRange]);
+
+  const entradasSemanaTotal = sum(entradasSemana);
+  const saidasSemanaTotal = sum(saidasSemana);
+  const saldoFinalSemana = saldoInicialSemana + entradasSemanaTotal - saidasSemanaTotal;
+
+  const handleDownloadWeekly = () => {
+    const entradas = entradasSemana.map(r => ({
+      date: r._ts,
+      amount_cents: r.amount_cents,
+      label: `Cliente ${r.customer}${r.description ? ` - ${r.description}` : (r.method ? ` - ${r.method}` : "")}`,
+    }));
+    const saidas = saidasSemana.map(p => ({
+      date: p._ts,
+      amount_cents: p.amount_cents,
+      label: `${p.description}${p.category ? ` (${p.category})` : ""}`,
+    }));
+    const { blob, fileName } = gerarPdfRelatorioSemanal({
+      weekStart: weekRange.ws,
+      weekEnd: weekRange.we,
+      openingCents: saldoInicialSemana,
+      entradas,
+      saidas,
+      saldoFinalCents: saldoFinalSemana,
+    });
+    downloadBlob(blob, fileName);
+    setShowWeeklyReport(false);
+  };
 
   // Saldo inicial em modal
   const [openOpening, setOpenOpening] = useState(false);
@@ -140,12 +215,13 @@ export default function Financeiro(){
             )}
 
             <div className="pill">
-              <span className="hint">De</span><strong>{from.split("-").reverse().join("/")}</strong>
+              <span className="hint">De</span><strong>{fmtISO(from)}</strong>
             </div>
             <div className="pill">
-              <span className="hint">Até</span><strong>{to.split("-").reverse().join("/")}</strong>
+              <span className="hint">Até</span><strong>{fmtISO(to)}</strong>
             </div>
             <button className="btn ghost ripple" onClick={()=>setShowPicker(true)}>Alterar datas</button>
+            <button className="btn primary ripple" onClick={()=>setShowWeeklyReport(true)}>Relatorio Semanal</button>
           </div>
         </div>
       </div>
@@ -165,8 +241,8 @@ export default function Financeiro(){
           totalPrev={entradasPrev}
           entradasPagas={entradasPagas}
           onAskMark={(id)=>{ setConfirmPay({ type:"rec", id }); setPaidDate(toISO(new Date())); }}
-          onRemove={(id)=>{
-            if (confirm("Excluir este recebivel?")) removeRec(id);
+          onRemove={async (id)=>{
+            if (confirm("Excluir este recebivel?")) await removeRec(id);
           }}
         />
       )}
@@ -177,8 +253,8 @@ export default function Financeiro(){
           pPaid={pPaid}
           saidasPagas={saidasPagas}
           onAskMark={(id)=>{ setConfirmPay({ type:"pay", id }); setPaidDate(toISO(new Date())); }}
-          onRemove={(id)=>{
-            if (confirm("Excluir este pagamento?")) removePay(id);
+          onRemove={async (id)=>{
+            if (confirm("Excluir este pagamento?")) await removePay(id);
           }}
         />
       )}
@@ -205,11 +281,11 @@ export default function Financeiro(){
             <button className="btn ripple" onClick={()=>setConfirmPay({ type:null, id:null })}>Cancelar</button>
             <button
               className="btn primary ripple"
-              onClick={()=>{
+              onClick={async ()=>{
                 if (confirmPay.type && confirmPay.id){
                   const ts = new Date(`${paidDate}T00:00:00`).getTime();
-                  if (confirmPay.type==="rec") markRecPaid(confirmPay.id, ts);
-                  if (confirmPay.type==="pay") markPayPaid(confirmPay.id, ts);
+                  if (confirmPay.type==="rec") await markRecPaid(confirmPay.id, ts);
+                  if (confirmPay.type==="pay") await markPayPaid(confirmPay.id, ts);
                 }
                 setConfirmPay({ type:null, id:null });
               }}
@@ -252,13 +328,46 @@ export default function Financeiro(){
               <button className="btn ripple" onClick={()=>setOpenOpening(false)}>Cancelar</button>
               <button
                 className="btn primary ripple"
-                onClick={()=>{
+                onClick={async ()=>{
                   const val = parseToCents(openingInput);
-                  useStore.getState().setCashOpening(monthKey, val);
+                  await useStore.getState().setCashOpening(monthKey, val);
                   setOpenOpening(false);
                 }}
               >Salvar</button>
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal - Relatorio semanal */}
+      <Modal open={showWeeklyReport} onClose={()=>setShowWeeklyReport(false)} title="Relatorio Semanal">
+        <div className="stack">
+          <div className="muted">Selecione a semana para gerar o PDF.</div>
+          <div className="row">
+            <div className="stack" style={{flex:1}}>
+              <label className="muted" style={{fontSize:12}}>Semana (inicio)</label>
+              <input
+                className="input"
+                type="date"
+                min="1970-01-04"
+                step={7}
+                value={weekRange.wsISO}
+                onChange={(e)=>setWeekStartISO(normalizeSundayISO(e.target.value))}
+              />
+            </div>
+            <div className="stack" style={{flex:1}}>
+              <label className="muted" style={{fontSize:12}}>Fim</label>
+              <div className="pill">
+                <span className="hint">Ate</span><strong>{fmtISO(weekRange.weISO)}</strong>
+              </div>
+            </div>
+          </div>
+          <div className="muted" style={{fontSize:12}}>
+            Registro da semana: {fmtISO(weekRange.wsISO)} a {fmtISO(weekRange.weISO)}
+          </div>
+          <div style={{display:"flex", justifyContent:"flex-end", gap:8}}>
+            <button className="btn ripple" onClick={()=>setShowWeeklyReport(false)}>Cancelar</button>
+            <button className="btn primary ripple" onClick={handleDownloadWeekly}>Baixar PDF</button>
           </div>
         </div>
       </Modal>
@@ -283,7 +392,10 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark, onR
             {rOpen.map((r)=>(
               <div key={r.id} className="table-row fade-in">
                 <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
-                <div style={{flex:1}}>{r.customer}</div>
+                <div style={{flex:1}}>
+                  <div>{r.customer}</div>
+                  {r.description && <div className="muted" style={{fontSize:12}}>{r.description}</div>}
+                </div>
                 <div className="muted" style={{minWidth:90}}>{r.method}</div>
                 <div style={{minWidth:130}}><strong>{formatCents(r.amount_cents)}</strong></div>
                 <button className="btn ripple" onClick={()=>onAskMark(r.id)}>
@@ -304,7 +416,10 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark, onR
             {rPaid.map((r)=>(
               <div key={r.id} className="table-row fade-in">
                 <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
-                <div style={{flex:1}}>{r.customer}</div>
+                <div style={{flex:1}}>
+                  <div>{r.customer}</div>
+                  {r.description && <div className="muted" style={{fontSize:12}}>{r.description}</div>}
+                </div>
                 <div className="muted" style={{minWidth:90}}>{r.method}</div>
                 <div style={{minWidth:130}}><strong>{formatCents(r.amount_cents)}</strong></div>
                 <div className="muted" style={{minWidth:120}}>Recebido</div>

@@ -5,7 +5,8 @@ export const ReceivableSchema = z.object({
   customer: z.string().trim().min(1, "Cliente é obrigatório"),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/,"Data inválida"),
   amount: z.union([z.string(), z.number()]),
-  method: z.enum(["pix","card","cash","boleto"])
+  method: z.enum(["pix","card","cash","boleto"]),
+  description: z.string().trim().optional().default("")
 });
 
 export const PayableSchema = z.object({

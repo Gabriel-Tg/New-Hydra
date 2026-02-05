@@ -7,9 +7,6 @@ export default function Inicio(){
   const receivables = useStore(s=>s.receivables);
   const payables = useStore(s=>s.payables);
   const clients = useStore(s=>s.clients);
-  const confirm = useStore(s=>s.confirmAppointment);
-  const complete = useStore(s=>s.completeAppointment);
-  const reschedule = useStore(s=>s.rescheduleAppointment);
   const [scope, setScope] = useState("day");
   const [reprog, setReprog] = useState(null);
   const today = new Date();
@@ -85,14 +82,14 @@ export default function Inicio(){
                   </div>
                   <div className="muted">{a.service}{a.location?` • ${a.location}`:""}</div>
                   <div className="item-actions">
-                    <button className="btn ripple" onClick={()=>useStore.getState().confirmAppointment(a.id)}>Confirmar</button>
+                    <button className="btn ripple" onClick={async ()=>{ await useStore.getState().confirmAppointment(a.id); }}>Confirmar</button>
                     <button className="btn ripple" onClick={()=>{
                       const d = new Date(a.start_at);
                       const e = new Date(a.end_at);
                       const pad = (n)=>String(n).padStart(2,'0');
                       setReprog({ id:a.id, date:d.toISOString().slice(0,10), start:`${pad(d.getHours())}:${pad(d.getMinutes())}`, end:`${pad(e.getHours())}:${pad(e.getMinutes())}` });
                     }}>Reagendar</button>
-                    <button className="btn primary ripple" onClick={()=>useStore.getState().completeAppointment(a.id)}>Concluir</button>
+                    <button className="btn primary ripple" onClick={async ()=>{ await useStore.getState().completeAppointment(a.id); }}>Concluir</button>
                   </div>
                 </div>
               </div>
@@ -111,8 +108,8 @@ export default function Inicio(){
           </div>
           <div style={{display:"flex", gap:8, justifyContent:"flex-end", marginTop:8}}>
             <button className="btn" onClick={()=>setReprog(null)}>Cancelar</button>
-            <button className="btn primary" onClick={()=>{
-              useStore.getState().rescheduleAppointment(reprog.id, { date: reprog.date, start: reprog.start, end: reprog.end });
+            <button className="btn primary" onClick={async ()=>{
+              await useStore.getState().rescheduleAppointment(reprog.id, { date: reprog.date, start: reprog.start, end: reprog.end });
               setReprog(null);
             }}>Salvar</button>
           </div>
