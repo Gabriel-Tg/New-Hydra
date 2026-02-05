@@ -30,6 +30,10 @@ export const useStore = create((set, get) => {
 
     /* UI */
     pushToast,
+    resetAll: () => {
+      save({ ...initial, cashOpening: {} });
+      pushToast({ title:"Dados locais limpos" });
+    },
 
     /* Clients */
     addClientIfMissing: (name) => {
@@ -112,6 +116,11 @@ export const useStore = create((set, get) => {
       save({ receivables });
       pushToast({ title:"Recebível marcado como pago" });
     },
+    removeReceivable: (id) => {
+      const receivables = get().receivables.filter(r => r.id !== id);
+      save({ receivables });
+      pushToast({ title:"Recebível removido" });
+    },
 
     /* Payables */
     addPayable: (data) => {
@@ -136,6 +145,11 @@ export const useStore = create((set, get) => {
       const payables = get().payables.map(p => p.id===id ? { ...p, status:"paid", paid_at: paidAt, updated_at: Date.now() } : p);
       save({ payables });
       pushToast({ title:"Pagamento efetuado" });
+    },
+    removePayable: (id) => {
+      const payables = get().payables.filter(p => p.id !== id);
+      save({ payables });
+      pushToast({ title:"Conta removida" });
     },
 
     /* Cash flow */

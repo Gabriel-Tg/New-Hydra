@@ -20,6 +20,8 @@ export default function Financeiro(){
   const payables = useStore(s=>s.payables);
   const markRecPaid = useStore(s=>s.markRecPaid);
   const markPayPaid = useStore(s=>s.markPayPaid);
+  const removeRec = useStore(s=>s.removeReceivable);
+  const removePay = useStore(s=>s.removePayable);
   const cashOpening = useStore(s=>s.cashOpening);
   const setOpening = useStore(s=>s.setCashOpening);
 
@@ -163,6 +165,9 @@ export default function Financeiro(){
           totalPrev={entradasPrev}
           entradasPagas={entradasPagas}
           onAskMark={(id)=>{ setConfirmPay({ type:"rec", id }); setPaidDate(toISO(new Date())); }}
+          onRemove={(id)=>{
+            if (confirm("Excluir este recebivel?")) removeRec(id);
+          }}
         />
       )}
       {tab==="pay" && (
@@ -172,6 +177,9 @@ export default function Financeiro(){
           pPaid={pPaid}
           saidasPagas={saidasPagas}
           onAskMark={(id)=>{ setConfirmPay({ type:"pay", id }); setPaidDate(toISO(new Date())); }}
+          onRemove={(id)=>{
+            if (confirm("Excluir este pagamento?")) removePay(id);
+          }}
         />
       )}
       {tab==="fluxo" && (
@@ -259,7 +267,7 @@ export default function Financeiro(){
 }
 
 /* Sub-seções (separei para deixar mais limpo) */
-function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
+function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark, onRemove }){
   const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount_cents||0),0);
   return (
     <div className="card slide-up">
@@ -281,6 +289,9 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
                 <button className="btn ripple" onClick={()=>onAskMark(r.id)}>
                   Marcar pago
                 </button>
+                <button className="btn ghost ripple" onClick={()=>onRemove(r.id)}>
+                  Excluir
+                </button>
               </div>
             ))}
           </div>
@@ -297,6 +308,9 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
                 <div className="muted" style={{minWidth:90}}>{r.method}</div>
                 <div style={{minWidth:130}}><strong>{formatCents(r.amount_cents)}</strong></div>
                 <div className="muted" style={{minWidth:120}}>Recebido</div>
+                <button className="btn ghost ripple" onClick={()=>onRemove(r.id)}>
+                  Excluir
+                </button>
               </div>
             ))}
           </div>
@@ -306,7 +320,7 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark }){
   );
 }
 
-function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
+function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark, onRemove }){
   const sum = (arr)=>arr.reduce((s,x)=>s+Number(x.amount_cents||0),0);
   return (
     <div className="card slide-up">
@@ -328,6 +342,9 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
                 <button className="btn ripple" onClick={()=>onAskMark(p.id)}>
                   Pagar
                 </button>
+                <button className="btn ghost ripple" onClick={()=>onRemove(p.id)}>
+                  Excluir
+                </button>
               </div>
             ))}
           </div>
@@ -344,6 +361,9 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark }){
                 <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
                 <div style={{minWidth:130}}><strong>{formatCents(p.amount_cents)}</strong></div>
                 <div className="muted" style={{minWidth:120}}>Pago</div>
+                <button className="btn ghost ripple" onClick={()=>onRemove(p.id)}>
+                  Excluir
+                </button>
               </div>
             ))}
           </div>
