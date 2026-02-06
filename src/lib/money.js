@@ -3,8 +3,24 @@ import Decimal from "decimal.js";
 // Converte entrada livre (string/number) para centavos inteiros.
 export function parseToCents(input){
   if (input === null || input === undefined) throw new Error("Valor obrigatório");
-  const cleaned = String(input).replace(/\s/g, "").replace(/[R$\u00A0]/g, "").replace(/\./g, "").replace(",", ".");
-  const dec = new Decimal(cleaned || "0");
+  const raw = String(input)
+    .replace(/\s/g, "")
+    .replace(/[R$\u00A0]/g, "");
+  const hasComma = raw.includes(",");
+  const hasDot = raw.includes(".");
+  let normalized = raw;
+  if (hasComma && hasDot) {
+    if (raw.lastIndexOf(",") > raw.lastIndexOf(".")) {
+      normalized = raw.replace(/\./g, "").replace(",", ".");
+    } else {
+      normalized = raw.replace(/,/g, "");
+    }
+  } else if (hasComma) {
+    normalized = raw.replace(",", ".");
+  } else if (hasDot) {
+    normalized = raw.replace(/,/g, "");
+  }
+  const dec = new Decimal(normalized || "0");
   if (!dec.isFinite()) throw new Error("Valor inválido");
   if (dec.isNeg()) throw new Error("Valor não pode ser negativo");
   return dec.mul(100).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
