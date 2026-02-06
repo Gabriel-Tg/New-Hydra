@@ -41,7 +41,7 @@ const tabFromPath = (path) => {
 };
 
 export default function App() {
-  const [tab, setTab] = useState(() => tabFromPath(window.location.pathname));
+  const [tab, setTab] = useState("inicio");
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const screenTitle = useMemo(
@@ -81,7 +81,13 @@ export default function App() {
         console.log("supabase.getSession ->", data.session);
         setSession(data.session || null);
         useStore.getState().setSession(data.session || null);
-        loadAllSafe(data.session);
+        await loadAllSafe(data.session);
+        if (data.session && data.session.user && data.session.user.id) {
+          setTab(tabFromPath(window.location.pathname));
+        } else {
+          setTab("inicio");
+          if (window.location.pathname !== "/") window.history.replaceState({}, "", "/");
+        }
       } catch (err) {
         useStore.getState().pushToast({ type: "error", title: "Falha ao iniciar", desc: err.message });
       }
@@ -93,6 +99,12 @@ export default function App() {
       setSession(nextSession || null);
       useStore.getState().setSession(nextSession || null);
       await loadAllSafe(nextSession);
+      if (nextSession && nextSession.user && nextSession.user.id) {
+        setTab(tabFromPath(window.location.pathname));
+      } else {
+        setTab("inicio");
+        if (window.location.pathname !== "/") window.history.replaceState({}, "", "/");
+      }
     });
     return () => listener.subscription.unsubscribe();
   }, []);
