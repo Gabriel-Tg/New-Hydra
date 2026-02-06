@@ -190,7 +190,9 @@ export const useStore = create((set, get) => {
         status: "open",
         method: payload.method,
       };
+      console.log("addReceivable payload ->", rec);
       const { data: row, error } = await supabase.from("receivables").insert(rec).select().single();
+      console.log("addReceivable result ->", { row, error });
       if (error) throw new Error(formatSupabaseError(error));
       save({ receivables: [...get().receivables, row] });
       pushToast({ title: "Recebivel adicionado" });
@@ -226,7 +228,9 @@ export const useStore = create((set, get) => {
         status: "open",
         category: payload.category || "Geral",
       };
+      console.log("addPayable payload ->", pay);
       const { data: row, error } = await supabase.from("payables").insert(pay).select().single();
+      console.log("addPayable result ->", { row, error });
       if (error) throw new Error(formatSupabaseError(error));
       save({ payables: [...get().payables, row] });
       pushToast({ title: "Conta a pagar adicionada" });
