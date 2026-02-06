@@ -4,10 +4,61 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+const KEEP_KEY = "auth:keepLoggedIn";
+const memoryStore = {};
+const hasWindow = typeof window !== "undefined";
+
+const getKeepLoggedIn = () => {
+  if (!hasWindow) return true;
+  try {
+    return window.localStorage.getItem(KEEP_KEY) !== "false";
+  } catch {
+    return true;
+  }
+};
+
+const storage = {
+  getItem: (key) => {
+    if (!hasWindow) return memoryStore[key] ?? null;
+    const keep = getKeepLoggedIn();
+    try {
+      const store = keep ? window.localStorage : window.sessionStorage;
+      return store.getItem(key);
+    } catch {
+      return memoryStore[key] ?? null;
+    }
+  },
+  setItem: (key, value) => {
+    if (!hasWindow) {
+      memoryStore[key] = value;
+      return;
+    }
+    const keep = getKeepLoggedIn();
+    try {
+      const store = keep ? window.localStorage : window.sessionStorage;
+      store.setItem(key, value);
+    } catch {
+      memoryStore[key] = value;
+    }
+  },
+  removeItem: (key) => {
+    if (!hasWindow) {
+      delete memoryStore[key];
+      return;
+    }
+    try {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    } catch {
+      delete memoryStore[key];
+    }
+  },
+};
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
-    // Always require login after reload.
-    persistSession: false,
+    persistSession: true,
+    storage,
   },
 });
 

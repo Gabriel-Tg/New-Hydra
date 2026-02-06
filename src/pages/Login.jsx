@@ -7,11 +7,24 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return window.localStorage.getItem("auth:keepLoggedIn") !== "false";
+    } catch {
+      return true;
+    }
+  });
 
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      try {
+        window.localStorage.setItem("auth:keepLoggedIn", keepLoggedIn ? "true" : "false");
+      } catch {
+        // ignore storage errors
+      }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       pushToast({ title: "Login realizado" });
@@ -49,6 +62,15 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+            <input
+              type="checkbox"
+              checked={keepLoggedIn}
+              onChange={(e) => setKeepLoggedIn(e.target.checked)}
+            />
+            Manter logado
+          </label>
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button type="submit" className={`btn primary ripple ${loading ? "saving" : ""}`}>
