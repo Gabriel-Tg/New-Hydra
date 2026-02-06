@@ -71,46 +71,46 @@ alter table payables enable row level security;
 alter table cash_opening enable row level security;
 
 create policy "clients_select" on clients
-  for select using (auth.uid() = user_id);
+  for select using (auth.uid() is not null);
 create policy "clients_insert" on clients
-  for insert with check (auth.uid() = user_id);
+  for insert with check (auth.uid() is not null);
 create policy "clients_update" on clients
-  for update using (auth.uid() = user_id);
+  for update using (auth.uid() is not null);
 create policy "clients_delete" on clients
-  for delete using (auth.uid() = user_id);
+  for delete using (auth.uid() is not null);
 
 create policy "appts_select" on appts
-  for select using (auth.uid() = user_id);
+  for select using (auth.uid() is not null);
 create policy "appts_insert" on appts
-  for insert with check (auth.uid() = user_id);
+  for insert with check (auth.uid() is not null);
 create policy "appts_update" on appts
-  for update using (auth.uid() = user_id);
+  for update using (auth.uid() is not null);
 create policy "appts_delete" on appts
-  for delete using (auth.uid() = user_id);
+  for delete using (auth.uid() is not null);
 
 create policy "receivables_select" on receivables
-  for select using (auth.uid() = user_id);
+  for select using (auth.uid() is not null);
 create policy "receivables_insert" on receivables
-  for insert with check (auth.uid() = user_id);
+  for insert with check (auth.uid() is not null);
 create policy "receivables_update" on receivables
-  for update using (auth.uid() = user_id);
+  for update using (auth.uid() is not null);
 create policy "receivables_delete" on receivables
-  for delete using (auth.uid() = user_id);
+  for delete using (auth.uid() is not null);
 
 create policy "payables_select" on payables
-  for select using (auth.uid() = user_id);
+  for select using (auth.uid() is not null);
 create policy "payables_insert" on payables
-  for insert with check (auth.uid() = user_id);
+  for insert with check (auth.uid() is not null);
 create policy "payables_update" on payables
-  for update using (auth.uid() = user_id);
+  for update using (auth.uid() is not null);
 create policy "payables_delete" on payables
-  for delete using (auth.uid() = user_id);
+  for delete using (auth.uid() is not null);
 
 create policy "cash_opening_select" on cash_opening
-  for select using (auth.uid() = user_id);
+  for select using (auth.uid() is not null);
 create policy "cash_opening_insert" on cash_opening
-  for insert with check (auth.uid() = user_id);
+  for insert with check (auth.uid() is not null);
 create policy "cash_opening_update" on cash_opening
-  for update using (auth.uid() = user_id);
+  for update using (auth.uid() is not null);
 create policy "cash_opening_delete" on cash_opening
-  for delete using (auth.uid() = user_id);
+  for delete using (auth.uid() is not null);

@@ -50,11 +50,11 @@ export const useStore = create((set, get) => {
   const loadAll = async (user_id) => {
     console.log("loadAll called for user_id:", user_id);
     const [clientsRes, apptsRes, receivablesRes, payablesRes, openingRes] = await Promise.all([
-      supabase.from("clients").select("*").eq("user_id", user_id),
-      supabase.from("appts").select("*").eq("user_id", user_id),
-      supabase.from("receivables").select("*").eq("user_id", user_id),
-      supabase.from("payables").select("*").eq("user_id", user_id),
-      supabase.from("cash_opening").select("*").eq("user_id", user_id),
+      supabase.from("clients").select("*"),
+      supabase.from("appts").select("*"),
+      supabase.from("receivables").select("*"),
+      supabase.from("payables").select("*"),
+      supabase.from("cash_opening").select("*"),
     ]);
     console.log("loadAll responses:", {
       clients: clientsRes?.data?.length ?? 0,
