@@ -61,6 +61,7 @@ export default function Lancamentos() {
     }
     setSaving(true);
     try {
+      console.log("submit lancamento ->", { type, date, description, amount, customer });
       if (type === "rec") {
         await addReceivable({
           customer,
@@ -86,6 +87,7 @@ export default function Lancamentos() {
     } catch (err) {
       setSaving(false);
       const msg = err?.message || err?.details || "Erro ao salvar";
+      console.error("erro ao salvar lancamento:", err);
       setErrorMsg(msg);
       useStore.getState().pushToast({ type: "error", title: "Erro ao salvar", desc: msg });
     }

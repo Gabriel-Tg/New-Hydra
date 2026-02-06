@@ -78,6 +78,7 @@ export default function App() {
     const init = async () => {
       try {
         const { data } = await supabase.auth.getSession();
+        console.log("supabase.getSession ->", data.session);
         setSession(data.session || null);
         useStore.getState().setSession(data.session || null);
         loadAllSafe(data.session);
@@ -88,6 +89,7 @@ export default function App() {
     init();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      console.log("onAuthStateChange ->", _event, nextSession);
       setSession(nextSession || null);
       useStore.getState().setSession(nextSession || null);
       await loadAllSafe(nextSession);
