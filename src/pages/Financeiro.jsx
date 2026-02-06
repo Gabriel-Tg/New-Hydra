@@ -5,6 +5,7 @@ import Portal from "../components/Portal.jsx";
 import { formatCents, parseToCents } from "../lib/money.js";
 import { gerarPdfRelatorioSemanal } from "../lib/pdfRelatorioSemanal.js";
 import { downloadBlob } from "../lib/pdfOrcamento.js";
+import { fmtDate, toDateOnlyTs } from "../lib/date.jsx";
 
 /* helpers de período */
 const toISO = (d) => {
@@ -13,11 +14,6 @@ const toISO = (d) => {
   return x.toISOString().slice(0, 10);
 };
 const fmtISO = (iso) => String(iso).split("-").reverse().join("/");
-const toDateOnlyTs = (d) => {
-  const x = d instanceof Date ? new Date(d) : new Date(Number.isFinite(d) ? d : d);
-  x.setHours(0, 0, 0, 0);
-  return x.getTime();
-};
 const paidTs = (item) => item.paid_at || toDateOnlyTs(item.due_date);
 const normalizeSundayISO = (iso) => {
   const d = new Date(`${iso}T00:00:00`);
@@ -294,7 +290,7 @@ export default function Financeiro(){
               className="btn primary ripple"
               onClick={async ()=>{
                 if (confirmPay.type && confirmPay.id){
-                  const ts = new Date(`${paidDate}T00:00:00`).getTime();
+                  const ts = toDateOnlyTs(paidDate);
                   if (confirmPay.type==="rec") await markRecPaid(confirmPay.id, ts);
                   if (confirmPay.type==="pay") await markPayPaid(confirmPay.id, ts);
                 }
@@ -402,7 +398,7 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark, onR
             {rOpen.length===0 && <div className="muted">Sem lançamentos em aberto.</div>}
             {rOpen.map((r)=>(
               <div key={r.id} className="table-row fade-in">
-                <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{minWidth:90}}>{fmtDate(r.due_date)}</div>
                 <div style={{flex:1}}>
                   <div>{r.customer}</div>
                   {r.description && <div className="muted" style={{fontSize:12}}>{r.description}</div>}
@@ -426,7 +422,7 @@ function SectionReceber({ rOpen, rPaid, totalPrev, entradasPagas, onAskMark, onR
             {rPaid.length===0 && <div className="muted">Nenhum recebido no período.</div>}
             {rPaid.map((r)=>(
               <div key={r.id} className="table-row fade-in">
-                <div style={{minWidth:90}}>{new Date(r.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{minWidth:90}}>{fmtDate(r.due_date)}</div>
                 <div style={{flex:1}}>
                   <div>{r.customer}</div>
                   {r.description && <div className="muted" style={{fontSize:12}}>{r.description}</div>}
@@ -461,7 +457,7 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark, onRemove
             {pOpen.length===0 && <div className="muted">Sem lançamentos em aberto.</div>}
             {pOpen.map((p)=>(
               <div key={p.id} className="table-row fade-in">
-                <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{minWidth:90}}>{fmtDate(p.due_date)}</div>
                 <div style={{flex:1}}>{p.description}</div>
                 <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
                 <div style={{minWidth:130}}><strong>{formatCents(p.amount_cents)}</strong></div>
@@ -482,7 +478,7 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark, onRemove
             {pPaid.length===0 && <div className="muted">Nenhum pago no período.</div>}
             {pPaid.map((p)=>(
               <div key={p.id} className="table-row fade-in">
-                <div style={{minWidth:90}}>{new Date(p.due_date).toLocaleDateString("pt-BR")}</div>
+                <div style={{minWidth:90}}>{fmtDate(p.due_date)}</div>
                 <div style={{flex:1}}>{p.description}</div>
                 <div className="muted" style={{minWidth:90}}>{p.category||"Geral"}</div>
                 <div style={{minWidth:130}}><strong>{formatCents(p.amount_cents)}</strong></div>

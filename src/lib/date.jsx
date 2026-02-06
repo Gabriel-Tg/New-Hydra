@@ -20,6 +20,13 @@ export const toDate = (d) => {
   return new Date(d);
 };
 
+// converte para YYYY-MM-DD em horario local
+export const toISODate = (d) => {
+  const x = toDate(d);
+  x.setMinutes(x.getMinutes() - x.getTimezoneOffset());
+  return x.toISOString().slice(0, 10);
+};
+
 export const toDateOnlyTs = (d) => {
   const x = toDate(d);
   x.setHours(0, 0, 0, 0);

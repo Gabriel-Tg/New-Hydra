@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Modal from "./Modal.jsx";
 import ClientAutocomplete from "./ClientAutocomplete.jsx";
 import { useStore } from "../lib/store.jsx";
-import { addMinutes } from "../lib/date.jsx";
+import { addMinutes, toISODate } from "../lib/date.jsx";
 
 export default function NewMenu(){
   const [type, setType] = useState(null);
@@ -33,7 +33,7 @@ function NewAppointment({ open, onClose }){
   const add = useStore(s=>s.addAppointment);
   const [saving, setSaving] = useState(false);
   const [clientName, setClientName] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0,10));
+  const [date, setDate] = useState(() => toISODate(new Date()));
   const [start, setStart] = useState("09:00");
   const [duration, setDuration] = useState(60);
   const [service, setService] = useState("Visita Técnica");
@@ -82,7 +82,7 @@ function NewReceivable({ open, onClose }){
   const add = useStore(s=>s.addReceivable);
   const [saving, setSaving] = useState(false);
   const [customer, setCustomer] = useState("");
-  const [due, setDue] = useState(()=> new Date().toISOString().slice(0,10));
+  const [due, setDue] = useState(() => toISODate(new Date()));
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("pix");
 
@@ -125,7 +125,7 @@ function NewPayable({ open, onClose }){
   const add = useStore(s=>s.addPayable);
   const [saving, setSaving] = useState(false);
   const [description, setDescription] = useState("");
-  const [due, setDue] = useState(()=> new Date().toISOString().slice(0,10));
+  const [due, setDue] = useState(() => toISODate(new Date()));
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Geral");
 

@@ -1,9 +1,10 @@
 import { jsPDF } from "jspdf";
 import { formatCents } from "./money.js";
+import { toDate, toISODate } from "./date.jsx";
 
 const fmtDate = (d) => {
   try {
-    return new Date(d).toLocaleDateString("pt-BR");
+    return toDate(d).toLocaleDateString("pt-BR");
   } catch {
     return "";
   }
@@ -118,8 +119,8 @@ export function gerarPdfRelatorioSemanal({
   doc.setFont("helvetica", "bold");
   doc.text(`Saldo Final da Semana: ${formatCents(saldoFinalCents)}`, margin, y);
 
-  const weekStartISO = new Date(weekStart).toISOString().slice(0, 10);
-  const weekEndISO = new Date(weekEnd).toISOString().slice(0, 10);
+  const weekStartISO = toISODate(weekStart);
+  const weekEndISO = toISODate(weekEnd);
   const fileName = `Relatorio_Semanal_${weekStartISO}_a_${weekEndISO}.pdf`;
   const blob = doc.output("blob");
   return { blob, fileName };

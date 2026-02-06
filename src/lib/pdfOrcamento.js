@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { toDate } from "./date.jsx";
 
 // ===== DADOS FIXOS DA EMPRESA =====
 const EMPRESA_NOME   = "NEW HYDRA INSTALAÇÕES HIDRAULICAS LTDA";
@@ -32,7 +33,7 @@ function splitText(doc, text, maxWidth) {
 /** Data ISO -> dd/mm/aaaa */
 function fmtDataISO(iso) {
   try {
-    const d = iso ? new Date(iso) : new Date();
+    const d = iso ? toDate(iso) : new Date();
     return d.toLocaleDateString("pt-BR");
   } catch {
     return "";

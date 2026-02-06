@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { gerarPdfOrcamento, downloadBlob } from "../lib/pdfOrcamento.js";
+import { fmtDate, toISODate } from "../lib/date.jsx";
 
 // Persistência apenas em sessão (evita deixar dados sensíveis em localStorage durável)
 const KEY = "orcamentos_v1";
@@ -26,7 +27,7 @@ export default function Orcamentos(){
 
   // formulário
   const [numero, setNumero] = useState("");
-  const [data, setData] = useState(() => new Date().toISOString());
+  const [data, setData] = useState(() => toISODate(new Date()));
   const [cliente, setCliente] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [contato, setContato] = useState("");
@@ -50,7 +51,7 @@ export default function Orcamentos(){
   function novoOrcamento(){
     setEditando(true);
     setNumero("");
-    setData(new Date().toISOString());
+    setData(toISODate(new Date()));
     setCliente("");
     setCnpj("");
     setContato("");
@@ -146,7 +147,7 @@ export default function Orcamentos(){
           <div className="table-card" style={{marginTop:12}}>
             {lista.map(o=>(
               <div key={o.id} className="table-row">
-                <div style={{minWidth:92}}>{new Date(o.data).toLocaleDateString("pt-BR")}</div>
+                <div style={{minWidth:92}}>{fmtDate(o.data)}</div>
                 <div style={{flex:1}}>{o.cliente}</div>
                 <div className="muted" style={{minWidth:120}}>{o.numero || "—"}</div>
                 <button
@@ -206,8 +207,8 @@ export default function Orcamentos(){
                 <input
                   className="input"
                   type="date"
-                  value={new Date(data).toISOString().slice(0,10)}
-                  onChange={e=>setData(new Date(e.target.value).toISOString())}
+                  value={toISODate(data)}
+                  onChange={e=>setData(e.target.value)}
                 />
               </div>
             </div>

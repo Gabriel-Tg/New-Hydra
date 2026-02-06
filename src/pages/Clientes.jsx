@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useStore } from "../lib/store.jsx";
 import Modal from "../components/Modal.jsx";
-import { fmtDate, fmtTime } from "../lib/date.jsx";
+import { fmtDate, fmtTime, toDate } from "../lib/date.jsx";
 
 export default function Clientes(){
   const clients = useStore(s=>s.clients);
@@ -20,17 +20,17 @@ export default function Clientes(){
   const historyFor = (cid) => {
     const A = appts.filter(a=>a.client_id===cid).map(a=>({ type:"appt", at:a.start_at, title:`Agendamento: ${a.service}`, sub:`${fmtDate(a.start_at)} ${fmtTime(a.start_at)}–${fmtTime(a.end_at)} ${a.location||""}` }));
     const R = recs.filter(r=>r.client_id===cid).map(r=>{
-      const paidDate = r.paid_at ? new Date(r.paid_at) : null;
-      const dueDate = new Date(r.due_date);
+      const paidDate = r.paid_at ? toDate(r.paid_at) : null;
+      const dueDate = toDate(r.due_date);
       const displayDate = paidDate || dueDate;
       const paidLate = paidDate ? paidDate.getTime() > dueDate.getTime() : false;
       return {
         type:"rec",
         at: displayDate.getTime(),
         title:`Valor: ${(Number(r.amount_cents||0)/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}`,
-        venc: `Vencimento: ${dueDate.toLocaleDateString("pt-BR")}`,
+        venc: `Vencimento: ${fmtDate(dueDate)}`,
         receb: paidDate
-          ? `Recebido em: ${paidDate.toLocaleDateString("pt-BR")} • Forma: ${r.method||"–"}`
+          ? `Recebido em: ${fmtDate(paidDate)} • Forma: ${r.method||"–"}`
           : `Forma: ${r.method||"–"}`,
         recebLate: paidLate,
       };
