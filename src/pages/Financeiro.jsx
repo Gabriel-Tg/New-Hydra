@@ -13,7 +13,12 @@ const toISO = (d) => {
   return x.toISOString().slice(0, 10);
 };
 const fmtISO = (iso) => String(iso).split("-").reverse().join("/");
-const paidTs = (item) => item.paid_at || item.due_date;
+const toDateOnlyTs = (d) => {
+  const x = d instanceof Date ? new Date(d) : new Date(Number.isFinite(d) ? d : d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+};
+const paidTs = (item) => item.paid_at || toDateOnlyTs(item.due_date);
 const normalizeSundayISO = (iso) => {
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return toISO(startOfWeek(new Date()));
@@ -88,15 +93,21 @@ export default function Financeiro(){
   const toTs = useMemo(() => endOfDay(new Date(`${to}T00:00:00`)).getTime(), [to]);
 
   const rInRange = useMemo(()=> (receivables||[])
-    .filter(r => r.due_date >= fromTs && r.due_date <= toTs)
-    .sort((a,b)=>a.due_date-b.due_date), [receivables, fromTs, toTs]);
+    .filter(r => {
+      const dueTs = toDateOnlyTs(r.due_date);
+      return dueTs >= fromTs && dueTs <= toTs;
+    })
+    .sort((a,b)=>toDateOnlyTs(a.due_date) - toDateOnlyTs(b.due_date)), [receivables, fromTs, toTs]);
 
   const rOpen = useMemo(()=> rInRange.filter(r=>r.status!=="paid"), [rInRange]);
   const rPaid = useMemo(()=> rInRange.filter(r=>r.status==="paid"), [rInRange]);
 
   const pInRange = useMemo(()=> (payables||[])
-    .filter(r => r.due_date >= fromTs && r.due_date <= toTs)
-    .sort((a,b)=>a.due_date-b.due_date), [payables, fromTs, toTs]);
+    .filter(r => {
+      const dueTs = toDateOnlyTs(r.due_date);
+      return dueTs >= fromTs && dueTs <= toTs;
+    })
+    .sort((a,b)=>toDateOnlyTs(a.due_date) - toDateOnlyTs(b.due_date)), [payables, fromTs, toTs]);
 
   const pOpen = useMemo(()=> pInRange.filter(p=>p.status!=="paid"), [pInRange]);
   const pPaid = useMemo(()=> pInRange.filter(p=>p.status==="paid"), [pInRange]);

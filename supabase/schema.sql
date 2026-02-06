@@ -33,7 +33,7 @@ create table if not exists receivables (
   client_id uuid references clients on delete set null,
   customer text not null,
   description text,
-  due_date bigint not null,
+  due_date date not null,
   amount_cents bigint not null,
   status text not null,
   method text not null,
@@ -46,7 +46,7 @@ create table if not exists payables (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users on delete cascade,
   description text not null,
-  due_date bigint not null,
+  due_date date not null,
   amount_cents bigint not null,
   status text not null,
   category text,
@@ -54,6 +54,12 @@ create table if not exists payables (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Migração (executar uma vez no Supabase SQL Editor):
+-- ALTER TABLE receivables
+--   ALTER COLUMN due_date TYPE date USING to_timestamp(due_date/1000)::date;
+-- ALTER TABLE payables
+--   ALTER COLUMN due_date TYPE date USING to_timestamp(due_date/1000)::date;
 
 create table if not exists cash_opening (
   id uuid primary key default gen_random_uuid(),

@@ -181,7 +181,7 @@ export const useStore = create((set, get) => {
         customer: payload.customer,
         client_id,
         description: payload.description || "",
-        due_date: new Date(`${payload.due_date}T00:00:00`).getTime(),
+        due_date: payload.due_date,
         amount_cents: parseToCents(payload.amount),
         status: "open",
         method: payload.method,
@@ -219,7 +219,7 @@ export const useStore = create((set, get) => {
       const pay = {
         user_id,
         description: payload.description,
-        due_date: new Date(`${payload.due_date}T00:00:00`).getTime(),
+        due_date: payload.due_date,
         amount_cents: parseToCents(payload.amount),
         status: "open",
         category: payload.category || "Geral",

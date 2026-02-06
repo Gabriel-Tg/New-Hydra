@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useStore } from "../lib/store.jsx";
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, fmtDate, fmtTime } from "../lib/date.jsx";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, fmtDate, fmtTime, toDateOnlyTs } from "../lib/date.jsx";
 
 export default function Inicio(){
   const appts = useStore(s=>s.appts);
@@ -19,10 +19,16 @@ export default function Inicio(){
     .sort((a,b)=>a.start_at-b.start_at), [appts, scope]);
 
   const recRange = useMemo(()=> (receivables||[])
-    .filter(r => r.due_date >= d0.getTime() && r.due_date <= d1.getTime() && r.status!=="paid"), [receivables, scope]);
+    .filter(r => {
+      const dueTs = toDateOnlyTs(r.due_date);
+      return dueTs >= d0.getTime() && dueTs <= d1.getTime() && r.status!=="paid";
+    }), [receivables, scope]);
 
   const payRange = useMemo(()=> (payables||[])
-    .filter(p => p.due_date >= d0.getTime() && p.due_date <= d1.getTime() && p.status!=="paid"), [payables, scope]);
+    .filter(p => {
+      const dueTs = toDateOnlyTs(p.due_date);
+      return dueTs >= d0.getTime() && dueTs <= d1.getTime() && p.status!=="paid";
+    }), [payables, scope]);
 
   const sum = (arr) => arr.reduce((s,x)=> s + Number(x.amount_cents||0), 0);
 

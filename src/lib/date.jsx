@@ -6,6 +6,12 @@ export const pad = (n) => String(n).padStart(2, "0");
 export const toDate = (d) =>
   (d instanceof Date ? new Date(d) : new Date(Number.isFinite(d) ? d : d));
 
+export const toDateOnlyTs = (d) => {
+  const x = toDate(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+};
+
 export const fmtDate = (d) => {
   const x = toDate(d);
   return `${pad(x.getDate())}/${pad(x.getMonth() + 1)}/${x.getFullYear()}`;
