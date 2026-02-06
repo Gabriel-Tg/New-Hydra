@@ -73,16 +73,16 @@ export default function App() {
       }
     };
 
+    setAuthReady(true);
+
     const init = async () => {
       try {
         const { data } = await supabase.auth.getSession();
         setSession(data.session || null);
         useStore.getState().setSession(data.session || null);
-        await loadAllSafe(data.session);
+        loadAllSafe(data.session);
       } catch (err) {
         useStore.getState().pushToast({ type: "error", title: "Falha ao iniciar", desc: err.message });
-      } finally {
-        setAuthReady(true);
       }
     };
     init();
