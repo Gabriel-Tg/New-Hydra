@@ -26,6 +26,7 @@ export function parseToCents(input){
   return dec.mul(100).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
 }
 
+
 // Formata centavos inteiros para BRL.
 export function formatCents(cents){
   const n = Number.isFinite(cents) ? cents : 0;
