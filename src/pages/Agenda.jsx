@@ -11,7 +11,6 @@ export default function Agenda() {
   const [view, setView] = useState("week");
   const [cursor, setCursor] = useState(() => startOfDay(new Date()));
 
-  
   const next = () => {
     if (view === "day") setCursor(addDays(cursor, 1));
     else if (view === "week") setCursor(addDays(cursor, 7));
