@@ -3,8 +3,22 @@
 export const pad = (n) => String(n).padStart(2, "0");
 
 // garante Date a partir de number/string/Date
-export const toDate = (d) =>
-  (d instanceof Date ? new Date(d) : new Date(Number.isFinite(d) ? d : d));
+export const toDate = (d) => {
+  if (d instanceof Date) return new Date(d);
+  if (Number.isFinite(d)) return new Date(d);
+  if (typeof d === "string") {
+    const trimmed = d.trim();
+    const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(trimmed);
+    if (m) {
+      const year = Number(m[1]);
+      const month = Number(m[2]) - 1;
+      const day = Number(m[3]);
+      return new Date(year, month, day);
+    }
+    return new Date(trimmed);
+  }
+  return new Date(d);
+};
 
 export const toDateOnlyTs = (d) => {
   const x = toDate(d);
