@@ -33,11 +33,7 @@ export const useStore = create((set, get) => {
     }, t.ttl ?? 2200);
   };
 
-  const requireUserId = () => {
-    const id = get().user?.id;
-    if (!id) throw new Error("Usuario nao autenticado");
-    return id;
-  };
+  const getUserId = () => get().user?.id || null;
 
   const setSession = (session) => {
     if (!session) {
@@ -104,7 +100,7 @@ export const useStore = create((set, get) => {
       const found = s.clients.find((c) => c.name.toLowerCase() === lowered);
       if (found) return found.id;
 
-      const user_id = requireUserId();
+      const user_id = getUserId();
       const { data, error } = await supabase
         .from("clients")
         .upsert({ user_id, name: name.trim(), phone: "", address: "", cnpj: "" }, { onConflict: "user_id,name" })
@@ -118,7 +114,7 @@ export const useStore = create((set, get) => {
     /* Appointments */
     addAppointment: async (data) => {
       const payload = validate(AppointmentSchema, data);
-      const user_id = requireUserId();
+      const user_id = getUserId();
       const client_id = data.client_id || await get().addClientIfMissing(payload.client_name);
       const start_at = new Date(`${payload.date}T${payload.start}:00`).getTime();
       const end_at = new Date(`${payload.date}T${payload.end}:00`).getTime();
@@ -178,7 +174,7 @@ export const useStore = create((set, get) => {
     /* Receivables */
     addReceivable: async (data) => {
       const payload = validate(ReceivableSchema, data);
-      const user_id = requireUserId();
+      const user_id = getUserId();
       const client_id = await get().addClientIfMissing(payload.customer);
       const rec = {
         user_id,
@@ -219,7 +215,7 @@ export const useStore = create((set, get) => {
     /* Payables */
     addPayable: async (data) => {
       const payload = validate(PayableSchema, data);
-      const user_id = requireUserId();
+      const user_id = getUserId();
       const pay = {
         user_id,
         description: payload.description,
@@ -256,7 +252,7 @@ export const useStore = create((set, get) => {
 
     /* Cash flow */
     setCashOpening: async (ym, value) => {
-      const user_id = requireUserId();
+      const user_id = getUserId();
       const amount_cents = parseToCents(value);
       const { error } = await supabase
         .from("cash_opening")

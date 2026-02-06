@@ -10,9 +10,7 @@ import Clientes from "./pages/Clientes.jsx";
 import Pedidos from "./pages/Pedidos.jsx";
 import Orcamentos from "./pages/Orcamentos.jsx";
 import Lancamentos from "./pages/Lancamentos.jsx";
-import Login from "./pages/Login.jsx";
 import Toast from "./components/Toast.jsx";
-import { supabase } from "./lib/supabase.js";
 import { useStore } from "./lib/store.jsx";
 
 const TABS = [
@@ -41,9 +39,7 @@ const tabFromPath = (path) => {
 };
 
 export default function App() {
-  const [tab, setTab] = useState("inicio");
-  const [session, setSession] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
+  const [tab, setTab] = useState(() => tabFromPath(window.location.pathname));
   const screenTitle = useMemo(
     () => TABS.find(t => t.key === tab)?.label || "Início",
     [tab]
@@ -64,74 +60,15 @@ export default function App() {
   }, [tab]);
 
   useEffect(() => {
-    const loadAllSafe = async (sess) => {
-      if (!sess?.user?.id) return;
+    const loadAllSafe = async () => {
       try {
-        await useStore.getState().loadAll(sess.user.id);
+        await useStore.getState().loadAll(null);
       } catch (err) {
         useStore.getState().pushToast({ type: "error", title: "Erro ao carregar dados", desc: err.message });
       }
     };
-
-    setAuthReady(true);
-
-    const init = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        console.log("supabase.getSession ->", data.session);
-        setSession(data.session || null);
-        useStore.getState().setSession(data.session || null);
-        await loadAllSafe(data.session);
-        if (data.session && data.session.user && data.session.user.id) {
-          setTab(tabFromPath(window.location.pathname));
-        } else {
-          setTab("inicio");
-          if (window.location.pathname !== "/") window.history.replaceState({}, "", "/");
-        }
-      } catch (err) {
-        useStore.getState().pushToast({ type: "error", title: "Falha ao iniciar", desc: err.message });
-      }
-    };
-    init();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      console.log("onAuthStateChange ->", _event, nextSession);
-      setSession(nextSession || null);
-      useStore.getState().setSession(nextSession || null);
-      await loadAllSafe(nextSession);
-      if (nextSession && nextSession.user && nextSession.user.id) {
-        setTab(tabFromPath(window.location.pathname));
-      } else {
-        setTab("inicio");
-        if (window.location.pathname !== "/") window.history.replaceState({}, "", "/");
-      }
-    });
-    return () => listener.subscription.unsubscribe();
+    loadAllSafe();
   }, []);
-
-  if (!authReady) {
-    return (
-      <div className="app">
-        <Header screenTitle="Carregando" />
-        <main className="main">
-          <div className="card">Carregando...</div>
-        </main>
-        <Toast />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="app">
-        <Header screenTitle="Login" />
-        <main className="main">
-          <Login />
-        </main>
-        <Toast />
-      </div>
-    );
-  }
 
   return (
     <div className="app">
