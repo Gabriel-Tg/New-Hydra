@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect, useState } from "react";
 import { useStore } from "../lib/store.jsx";
 import Modal from "../components/Modal.jsx";
 import Portal from "../components/Portal.jsx";
-import { formatCents, parseToCents } from "../lib/money.js";
+import { formatCents } from "../lib/money.js";
 import { gerarPdfRelatorioSemanal } from "../lib/pdfRelatorioSemanal.js";
 import { downloadBlob } from "../lib/pdfOrcamento.js";
 import { fmtDate, toDateOnlyTs } from "../lib/date.jsx";
@@ -110,13 +110,13 @@ export default function Financeiro(){
 
   const sum = (arr, filter=()=>true) => arr.filter(filter).reduce((s,x)=> s + Number(x.amount_cents||0), 0);
 
-  const monthKey = ymKey(from);
-  const opening = cashOpening[monthKey] || 0;
   const entradasPrev = sum(rOpen);
   const saidasPrev = sum(pOpen);
   const entradasPagas = sum(rInRange, x=>x.status==="paid");
   const saidasPagas = sum(pInRange, x=>x.status==="paid");
-  const saldoReal = opening + entradasPagas - saidasPagas;
+  const entradasPagasAte = sum(receivables || [], r => r.status === "paid" && paidTs(r) <= toTs);
+  const saidasPagasAte = sum(payables || [], p => p.status === "paid" && paidTs(p) <= toTs);
+  const saldoReal = entradasPagasAte - saidasPagasAte;
   const saldoPrevisto = saldoReal + entradasPrev - saidasPrev;
 
   const weekRange = useMemo(() => {
@@ -180,14 +180,6 @@ export default function Financeiro(){
     setShowWeeklyReport(false);
   };
 
-  // Saldo inicial em modal
-  const [openOpening, setOpenOpening] = useState(false);
-  const [openingInput, setOpeningInput] = useState(() => String(opening));
-  const openingPreview = (() => {
-    try { return formatCents(parseToCents(openingInput)); }
-    catch { return "Valor inválido"; }
-  })();
-
   return (
     <div className="stack fade-in">
       {/* TOOLBAR */}
@@ -195,7 +187,7 @@ export default function Financeiro(){
         <div className="toolbar">
           <div className="toolbar-start">
             <div style={{fontWeight:800, fontSize:18}}>Financeiro</div>
-            <div className="muted" style={{fontSize:12}}>Filtre o período, edite o saldo inicial e gerencie lançamentos</div>
+            <div className="muted" style={{fontSize:12}}>Filtre o período e gerencie lançamentos</div>
           </div>
 
           <div className="pill-group">
@@ -267,15 +259,12 @@ export default function Financeiro(){
       )}
       {tab==="fluxo" && (
         <SectionFluxo
-          monthKey={monthKey}
-          opening={opening}
           entradasPrev={entradasPrev}
           saidasPrev={saidasPrev}
           saldoPrevisto={saldoPrevisto}
           entradasPagas={entradasPagas}
           saidasPagas={saidasPagas}
           saldoReal={saldoReal}
-          openOpening={()=>{ setOpeningInput(String(opening)); setOpenOpening(true); }}
         />
       )}
 
@@ -315,34 +304,6 @@ export default function Financeiro(){
         </div>
         <div style={{display:"flex", justifyContent:"flex-end", gap:8}}>
           <button className="btn ripple" onClick={()=>setShowPicker(false)}>Fechar</button>
-        </div>
-      </Modal>
-
-      {/* Modal - Saldo inicial */}
-      <Modal open={openOpening} onClose={()=>setOpenOpening(false)} title={`Saldo inicial — ${monthKey}`}>
-        <div className="stack">
-          <div className="muted">Informe o saldo de abertura do mês selecionado.</div>
-          <input
-            className="input"
-            inputMode="decimal"
-            value={openingInput}
-            onChange={(e)=>setOpeningInput(e.target.value)}
-            placeholder="Ex.: 1500,00"
-          />
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-            <div className="muted">Prévia: <strong>{openingPreview}</strong></div>
-            <div style={{display:"flex", gap:8}}>
-              <button className="btn ripple" onClick={()=>setOpenOpening(false)}>Cancelar</button>
-              <button
-                className="btn primary ripple"
-                onClick={async ()=>{
-                  const val = parseToCents(openingInput);
-                  await useStore.getState().setCashOpening(monthKey, val);
-                  setOpenOpening(false);
-                }}
-              >Salvar</button>
-            </div>
-          </div>
         </div>
       </Modal>
 
@@ -495,16 +456,12 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark, onRemove
   );
 }
 
-function SectionFluxo({ monthKey, opening, entradasPrev, saidasPrev, saldoPrevisto, entradasPagas, saidasPagas, saldoReal, openOpening }){
+function SectionFluxo({ entradasPrev, saidasPrev, saldoPrevisto, entradasPagas, saidasPagas, saldoReal }){
   const fmt = (v)=>formatCents(v);
   return (
     <div className="card slide-up">
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:8}}>
         <strong>Fluxo de Caixa</strong>
-        <button className="pill ripple" onClick={openOpening}>
-          <span className="hint">Saldo inicial {monthKey}</span>
-          <strong>{fmt(opening)}</strong>
-        </button>
       </div>
       <div className="stack" style={{gap:12}}>
         <div className="muted" style={{fontSize:12}}>Fluxo de Caixa (previsão)</div>
@@ -517,7 +474,7 @@ function SectionFluxo({ monthKey, opening, entradasPrev, saidasPrev, saldoPrevis
         <div className="row">
           <div className="kpi fade-in"><div className="label">Entradas recebidas</div><div className="value">{fmt(entradasPagas)}</div></div>
           <div className="kpi fade-in"><div className="label">Saídas realizadas</div><div className="value">{fmt(saidasPagas)}</div></div>
-          <div className="kpi fade-in"><div className="label">Saldo real</div><div className="value">{fmt(saldoReal)}</div></div>
+          <div className="kpi fade-in"><div className="label">Saldo atual</div><div className="value">{fmt(saldoReal)}</div></div>
         </div>
       </div>
     </div>

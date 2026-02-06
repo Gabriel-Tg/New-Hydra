@@ -6,14 +6,19 @@ export const ReceivableSchema = z.object({
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/,"Data inválida"),
   amount: z.union([z.string(), z.number()]),
   method: z.enum(["pix","card","cash","boleto"]),
-  description: z.string().trim().optional().default("")
+  description: z.string().trim().optional().default(""),
+  status: z.enum(["open", "paid"]).optional().default("open"),
+  paid_at: z.number().int().optional()
 });
 
 export const PayableSchema = z.object({
   description: z.string().trim().min(1, "Descrição é obrigatória"),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/,"Data inválida"),
   amount: z.union([z.string(), z.number()]),
-  category: z.string().trim().default("Geral")
+  category: z.string().trim().default("Geral"),
+  method: z.enum(["pix","card","cash","boleto"]),
+  status: z.enum(["open", "paid"]).optional().default("open"),
+  paid_at: z.number().int().optional()
 });
 
 export const AppointmentSchema = z.object({

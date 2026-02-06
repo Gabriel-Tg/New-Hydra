@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useStore } from "../lib/store.jsx";
 import { formatCents } from "../lib/money.js";
-import { fmtDate } from "../lib/date.jsx";
+import { fmtDate, toDateOnlyTs } from "../lib/date.jsx";
 import ClientAutocomplete from "../components/ClientAutocomplete.jsx";
 
 const toISO = (d) => {
@@ -16,13 +16,17 @@ export default function Lancamentos() {
   const receivables = useStore((s) => s.receivables);
   const payables = useStore((s) => s.payables);
 
-  const [type, setType] = useState("rec");
+  const [type, setType] = useState("rec-open");
   const [date, setDate] = useState(() => toISO(new Date()));
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [customer, setCustomer] = useState("");
+  const [method, setMethod] = useState("pix");
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const isReceivable = type.startsWith("rec");
+  const isPaid = type.endsWith("paid");
 
   const entries = useMemo(() => {
     const recs = (receivables || []).map((r) => ({
@@ -30,16 +34,18 @@ export default function Lancamentos() {
       date: r.due_date,
       description: r.description || "Recebimento",
       amount_cents: r.amount_cents,
-      type: "A receber",
+      type: r.status === "paid" ? "Recebido" : "A receber",
       customer: r.customer,
+      method: r.method,
     }));
     const pays = (payables || []).map((p) => ({
       id: p.id,
       date: p.due_date,
       description: p.description,
       amount_cents: p.amount_cents,
-      type: "A pagar",
+      type: p.status === "paid" ? "Pago" : "A pagar",
       customer: "-",
+      method: p.method,
     }));
     return [...recs, ...pays].sort((a, b) => b.date - a.date);
   }, [receivables, payables]);
@@ -53,7 +59,7 @@ export default function Lancamentos() {
       useStore.getState().pushToast({ type: "error", title: msg });
       return;
     }
-    if (type === "rec" && !customer.trim()) {
+    if (isReceivable && !customer.trim()) {
       const msg = "Cliente obrigatorio";
       setErrorMsg(msg);
       useStore.getState().pushToast({ type: "error", title: msg });
@@ -61,14 +67,18 @@ export default function Lancamentos() {
     }
     setSaving(true);
     try {
-      console.log("submit lancamento ->", { type, date, description, amount, customer });
-      if (type === "rec") {
+      const status = isPaid ? "paid" : "open";
+      const paid_at = isPaid ? toDateOnlyTs(date) : undefined;
+      console.log("submit lancamento ->", { type, date, description, amount, customer, status, method });
+      if (isReceivable) {
         await addReceivable({
           customer,
           due_date: date,
           amount,
-          method: "pix",
+          method,
           description,
+          status,
+          paid_at,
         });
       } else {
         await addPayable({
@@ -76,6 +86,9 @@ export default function Lancamentos() {
           due_date: date,
           amount,
           category: "Geral",
+          method,
+          status,
+          paid_at,
         });
       }
       setTimeout(() => {
@@ -112,8 +125,10 @@ export default function Lancamentos() {
             <div className="stack" style={{ flex: 1 }}>
               <label className="muted" style={{ fontSize: 12 }}>Tipo</label>
               <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="rec">A receber</option>
-                <option value="pay">A pagar</option>
+                <option value="rec-open">A receber</option>
+                <option value="rec-paid">Recebido</option>
+                <option value="pay-open">A pagar</option>
+                <option value="pay-paid">Pago</option>
               </select>
             </div>
           </div>
@@ -134,11 +149,21 @@ export default function Lancamentos() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
-            {type === "rec" ? (
+            {isReceivable ? (
               <ClientAutocomplete value={customer} onChange={setCustomer} placeholder="Cliente" />
             ) : (
               <input className="input" placeholder="Cliente" value="-" disabled />
             )}
+          </div>
+
+          <div className="stack">
+            <label className="muted" style={{ fontSize: 12 }}>Forma de pagamento</label>
+            <select className="input" value={method} onChange={(e) => setMethod(e.target.value)}>
+              <option value="pix">Pix</option>
+              <option value="card">Cartao</option>
+              <option value="cash">Dinheiro</option>
+              <option value="boleto">Boleto</option>
+            </select>
           </div>
 
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -162,13 +187,14 @@ export default function Lancamentos() {
               <th>Descricao</th>
               <th className="right">Valor</th>
               <th>Tipo</th>
+              <th>Forma</th>
               <th>Cliente</th>
             </tr>
           </thead>
           <tbody>
             {entries.length === 0 && (
               <tr>
-                <td colSpan="5" className="muted" style={{ padding: 16 }}>
+                <td colSpan="6" className="muted" style={{ padding: 16 }}>
                   Nenhum lancamento cadastrado.
                 </td>
               </tr>
@@ -179,6 +205,7 @@ export default function Lancamentos() {
                 <td>{item.description}</td>
                 <td style={{ textAlign: "right" }}>{formatCents(item.amount_cents)}</td>
                 <td>{item.type}</td>
+                <td>{item.method || "-"}</td>
                 <td>{item.customer}</td>
               </tr>
             ))}

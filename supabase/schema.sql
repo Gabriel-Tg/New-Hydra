@@ -50,6 +50,7 @@ create table if not exists payables (
   amount_cents bigint not null,
   status text not null,
   category text,
+  method text,
   paid_at bigint,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -60,6 +61,7 @@ create table if not exists payables (
 --   ALTER COLUMN due_date TYPE date USING to_timestamp(due_date/1000)::date;
 -- ALTER TABLE payables
 --   ALTER COLUMN due_date TYPE date USING to_timestamp(due_date/1000)::date;
+-- ALTER TABLE payables ADD COLUMN IF NOT EXISTS method text;
 
 create table if not exists cash_opening (
   id uuid primary key default gen_random_uuid(),

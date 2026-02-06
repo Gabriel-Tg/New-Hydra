@@ -128,12 +128,13 @@ function NewPayable({ open, onClose }){
   const [due, setDue] = useState(() => toISODate(new Date()));
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Geral");
+  const [method, setMethod] = useState("pix");
 
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await add({ description, due_date: due, amount, category });
+      await add({ description, due_date: due, amount, category, method });
       setTimeout(()=>{ setSaving(false); onClose(); }, 200);
     } catch (err) {
       setSaving(false);
@@ -150,6 +151,12 @@ function NewPayable({ open, onClose }){
           <input className="input" type="number" step="0.01" placeholder="Valor (R$)" value={amount} onChange={e=>setAmount(e.target.value)} />
         </div>
         <input className="input" placeholder="Categoria" value={category} onChange={e=>setCategory(e.target.value)} />
+        <select className="input" value={method} onChange={e=>setMethod(e.target.value)}>
+          <option value="pix">Pix</option>
+          <option value="card">Cartao</option>
+          <option value="cash">Dinheiro</option>
+          <option value="boleto">Boleto</option>
+        </select>
         <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
           <button type="submit" className={`btn primary ${saving?"saving":""}`}>Salvar</button>

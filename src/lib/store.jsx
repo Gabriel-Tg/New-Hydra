@@ -176,6 +176,8 @@ export const useStore = create((set, get) => {
       const payload = validate(ReceivableSchema, data);
       const user_id = getUserId();
       const client_id = await get().addClientIfMissing(payload.customer);
+      const status = payload.status || "open";
+      const paid_at = status === "paid" ? (payload.paid_at || Date.now()) : null;
       const rec = {
         user_id,
         customer: payload.customer,
@@ -183,8 +185,9 @@ export const useStore = create((set, get) => {
         description: payload.description || "",
         due_date: payload.due_date,
         amount_cents: parseToCents(payload.amount),
-        status: "open",
+        status,
         method: payload.method,
+        paid_at,
       };
       console.log("addReceivable payload ->", rec);
       const { data: row, error } = await supabase.from("receivables").insert(rec).select().single();
@@ -216,13 +219,17 @@ export const useStore = create((set, get) => {
     addPayable: async (data) => {
       const payload = validate(PayableSchema, data);
       const user_id = getUserId();
+      const status = payload.status || "open";
+      const paid_at = status === "paid" ? (payload.paid_at || Date.now()) : null;
       const pay = {
         user_id,
         description: payload.description,
         due_date: payload.due_date,
         amount_cents: parseToCents(payload.amount),
-        status: "open",
+        status,
         category: payload.category || "Geral",
+        method: payload.method,
+        paid_at,
       };
       console.log("addPayable payload ->", pay);
       const { data: row, error } = await supabase.from("payables").insert(pay).select().single();
