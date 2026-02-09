@@ -34,6 +34,12 @@ body{ margin:0; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Ro
 
 .main{ flex:1; padding:12px 14px 88px; }
 
+.page-bottom-safe::after{
+  content:"";
+  display:block;
+  height:96px;
+}
+
 .muted{ color:var(--muted); }
 
 .card{

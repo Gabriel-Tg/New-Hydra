@@ -22,6 +22,7 @@ export default function Lancamentos() {
   const [amount, setAmount] = useState("");
   const [customer, setCustomer] = useState("");
   const [method, setMethod] = useState("pix");
+  const [filter, setFilter] = useState("all");
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -37,6 +38,7 @@ export default function Lancamentos() {
       type: r.status === "paid" ? "Recebido" : "A receber",
       customer: r.customer,
       method: r.method,
+      filterKey: `rec-${r.status}`,
     }));
     const pays = (payables || []).map((p) => ({
       id: p.id,
@@ -46,9 +48,15 @@ export default function Lancamentos() {
       type: p.status === "paid" ? "Pago" : "A pagar",
       customer: "-",
       method: p.method,
+      filterKey: `pay-${p.status}`,
     }));
-    return [...recs, ...pays].sort((a, b) => b.date - a.date);
+    return [...recs, ...pays].sort((a, b) => toDateOnlyTs(b.date) - toDateOnlyTs(a.date));
   }, [receivables, payables]);
+
+  const filteredEntries = useMemo(() => {
+    if (filter === "all") return entries;
+    return entries.filter((item) => item.filterKey === filter);
+  }, [entries, filter]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -107,7 +115,7 @@ export default function Lancamentos() {
   };
 
   return (
-    <div className="stack fade-in">
+    <div className="stack fade-in page-bottom-safe">
       <div className="card">
         <div style={{ fontWeight: 800, fontSize: 18 }}>Lancamentos</div>
         <div className="muted" style={{ fontSize: 12 }}>
@@ -179,6 +187,25 @@ export default function Lancamentos() {
         </form>
       </div>
 
+      <div className="card slide-up">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div className="stack" style={{ gap: 4 }}>
+            <div style={{ fontWeight: 700 }}>Filtro</div>
+            <div className="muted" style={{ fontSize: 12 }}>Selecione quais lancamentos exibir.</div>
+          </div>
+          <div className="stack" style={{ minWidth: 220, gap: 6 }}>
+            <label className="muted" style={{ fontSize: 12 }}>Mostrar</label>
+            <select className="input" value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="all">Todos</option>
+              <option value="rec-open">A receber</option>
+              <option value="rec-paid">Recebidos</option>
+              <option value="pay-open">A pagar</option>
+              <option value="pay-paid">Pagos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div className="card slide-up" style={{ padding: 0 }}>
         <table className="table">
           <thead>
@@ -192,14 +219,14 @@ export default function Lancamentos() {
             </tr>
           </thead>
           <tbody>
-            {entries.length === 0 && (
+            {filteredEntries.length === 0 && (
               <tr>
                 <td colSpan="6" className="muted" style={{ padding: 16 }}>
                   Nenhum lancamento cadastrado.
                 </td>
               </tr>
             )}
-            {entries.map((item) => (
+            {filteredEntries.map((item) => (
               <tr key={item.id}>
                 <td>{fmtDate(item.date)}</td>
                 <td>{item.description}</td>
