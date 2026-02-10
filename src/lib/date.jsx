@@ -67,10 +67,10 @@ export const endOfDay = (d) => {
   return x;
 };
 
-// semana começando na segunda
+// semana começando no domingo
 export const startOfWeek = (d) => {
   const x = toDate(d);
-  const dow = (x.getDay() + 6) % 7; // Mon=0 .. Sun=6
+  const dow = x.getDay(); // Sun=0 .. Sat=6
   x.setDate(x.getDate() - dow);
   x.setHours(0, 0, 0, 0);
   return x;

@@ -10,6 +10,7 @@ export default function Inicio(){
   const [scope, setScope] = useState("day");
   const [reprog, setReprog] = useState(null);
   const today = new Date();
+  const paidTs = (item) => item.paid_at || toDateOnlyTs(item.due_date);
 
   const d0 = scope==="day" ? startOfDay(today) : startOfWeek(today);
   const d1 = scope==="day" ? endOfDay(today)   : endOfWeek(today);
@@ -20,17 +21,24 @@ export default function Inicio(){
 
   const recRange = useMemo(()=> (receivables||[])
     .filter(r => {
-      const dueTs = toDateOnlyTs(r.due_date);
-      return dueTs >= d0.getTime() && dueTs <= d1.getTime() && r.status!=="paid";
+      const ts = paidTs(r);
+      return ts >= d0.getTime() && ts <= d1.getTime() && r.status==="paid";
     }), [receivables, scope]);
 
   const payRange = useMemo(()=> (payables||[])
     .filter(p => {
-      const dueTs = toDateOnlyTs(p.due_date);
-      return dueTs >= d0.getTime() && dueTs <= d1.getTime() && p.status!=="paid";
+      const ts = paidTs(p);
+      return ts >= d0.getTime() && ts <= d1.getTime() && p.status==="paid";
     }), [payables, scope]);
 
+  const recPaidAll = useMemo(()=> (receivables||[])
+    .filter(r => r.status === "paid"), [receivables]);
+
+  const payPaidAll = useMemo(()=> (payables||[])
+    .filter(p => p.status === "paid"), [payables]);
+
   const sum = (arr) => arr.reduce((s,x)=> s + Number(x.amount_cents||0), 0);
+
 
   return (
     <div className="stack">
@@ -55,16 +63,16 @@ export default function Inicio(){
           <div className="value">{apptsRange.length}</div>
         </div>
         <div className="kpi slide-up">
-          <div className="label">A receber ({recRange.length})</div>
+          <div className="label">Recebidos ({recRange.length})</div>
           <div className="value">{(sum(recRange)/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</div>
         </div>
         <div className="kpi slide-up">
-          <div className="label">A pagar ({payRange.length})</div>
+          <div className="label">Pagos ({payRange.length})</div>
           <div className="value">{(sum(payRange)/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</div>
         </div>
         <div className="kpi slide-up">
-          <div className="label">Saldo previsto</div>
-          <div className="value">{((sum(recRange)-sum(payRange))/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</div>
+          <div className="label">Saldo atual</div>
+          <div className="value">{((sum(recPaidAll)-sum(payPaidAll))/100).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</div>
         </div>
       </div>
 

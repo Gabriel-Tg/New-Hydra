@@ -208,6 +208,32 @@ export const useStore = create((set, get) => {
       save({ receivables: get().receivables.map((r) => (r.id === id ? row : r)) });
       pushToast({ title: "Recebivel marcado como pago" });
     },
+    updateReceivable: async (id, data) => {
+      const payload = validate(ReceivableSchema, data);
+      const current = get().receivables.find((r) => r.id === id);
+      const status = payload.status || "open";
+      const paid_at = status === "paid" ? (payload.paid_at ?? current?.paid_at ?? Date.now()) : null;
+      const client_id = await get().addClientIfMissing(payload.customer);
+      const updates = {
+        customer: payload.customer,
+        client_id,
+        description: payload.description || "",
+        due_date: payload.due_date,
+        amount_cents: parseToCents(payload.amount),
+        status,
+        method: payload.method,
+        paid_at,
+      };
+      const { data: row, error } = await supabase
+        .from("receivables")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw new Error(formatSupabaseError(error));
+      save({ receivables: get().receivables.map((r) => (r.id === id ? row : r)) });
+      pushToast({ title: "Recebivel atualizado" });
+    },
     removeReceivable: async (id) => {
       const { error } = await supabase.from("receivables").delete().eq("id", id);
       if (error) throw new Error(formatSupabaseError(error));
@@ -249,6 +275,30 @@ export const useStore = create((set, get) => {
       if (error) throw new Error(formatSupabaseError(error));
       save({ payables: get().payables.map((p) => (p.id === id ? row : p)) });
       pushToast({ title: "Pagamento efetuado" });
+    },
+    updatePayable: async (id, data) => {
+      const payload = validate(PayableSchema, data);
+      const current = get().payables.find((p) => p.id === id);
+      const status = payload.status || "open";
+      const paid_at = status === "paid" ? (payload.paid_at ?? current?.paid_at ?? Date.now()) : null;
+      const updates = {
+        description: payload.description,
+        due_date: payload.due_date,
+        amount_cents: parseToCents(payload.amount),
+        status,
+        category: payload.category || "Geral",
+        method: payload.method,
+        paid_at,
+      };
+      const { data: row, error } = await supabase
+        .from("payables")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw new Error(formatSupabaseError(error));
+      save({ payables: get().payables.map((p) => (p.id === id ? row : p)) });
+      pushToast({ title: "Pagamento atualizado" });
     },
     removePayable: async (id) => {
       const { error } = await supabase.from("payables").delete().eq("id", id);

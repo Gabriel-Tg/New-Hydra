@@ -259,9 +259,6 @@ export default function Financeiro(){
       )}
       {tab==="fluxo" && (
         <SectionFluxo
-          entradasPrev={entradasPrev}
-          saidasPrev={saidasPrev}
-          saldoPrevisto={saldoPrevisto}
           entradasPagas={entradasPagas}
           saidasPagas={saidasPagas}
           saldoReal={saldoReal}
@@ -456,7 +453,7 @@ function SectionPagar({ pInRange, pOpen, pPaid, saidasPagas, onAskMark, onRemove
   );
 }
 
-function SectionFluxo({ entradasPrev, saidasPrev, saldoPrevisto, entradasPagas, saidasPagas, saldoReal }){
+function SectionFluxo({ entradasPagas, saidasPagas, saldoReal }){
   const fmt = (v)=>formatCents(v);
   return (
     <div className="card slide-up">
@@ -464,12 +461,6 @@ function SectionFluxo({ entradasPrev, saidasPrev, saldoPrevisto, entradasPagas, 
         <strong>Fluxo de Caixa</strong>
       </div>
       <div className="stack" style={{gap:12}}>
-        <div className="muted" style={{fontSize:12}}>Fluxo de Caixa (previsão)</div>
-        <div className="row">
-          <div className="kpi fade-in"><div className="label">Entradas previstas</div><div className="value">{fmt(entradasPrev)}</div></div>
-          <div className="kpi fade-in"><div className="label">Saídas previstas</div><div className="value">{fmt(saidasPrev)}</div></div>
-          <div className="kpi fade-in"><div className="label">Saldo previsto</div><div className="value">{fmt(saldoPrevisto)}</div></div>
-        </div>
         <div className="muted" style={{fontSize:12}}>Fluxo de Caixa (real)</div>
         <div className="row">
           <div className="kpi fade-in"><div className="label">Entradas recebidas</div><div className="value">{fmt(entradasPagas)}</div></div>
